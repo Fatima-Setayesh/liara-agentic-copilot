@@ -19,9 +19,10 @@ type ProfessionalCodeBlockProps = {
   fileName: string;
   language: string;
   lines: CodeLine[];
+  revealing?: boolean;
 };
 
-export function ProfessionalCodeBlock({ fileName, language, lines }: ProfessionalCodeBlockProps) {
+export function ProfessionalCodeBlock({ fileName, language, lines, revealing = false }: ProfessionalCodeBlockProps) {
   const [copied, setCopied] = useState(false);
   const code = lines.map((line) => line.tokens.map((token) => token.text).join("")).join("\n");
 
@@ -36,7 +37,7 @@ export function ProfessionalCodeBlock({ fileName, language, lines }: Professiona
   }
 
   return (
-    <div className={styles.codeBlock}>
+    <div className={`${styles.codeBlock} ${revealing ? styles.codeBlockReveal : ""}`}>
       <div className={styles.codeHeader}>
         <div className={styles.fileIdentity}>
           <strong>{fileName}</strong>

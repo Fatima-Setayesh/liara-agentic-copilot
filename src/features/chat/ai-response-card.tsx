@@ -25,9 +25,13 @@ import {
 } from "./ai-response-model";
 import styles from "./ai-response-card.module.css";
 import workspaceStyles from "./chat-workspace.module.css";
+import { LoadingState } from "./loading-state";
 import { ProfessionalCodeBlock } from "./professional-code-block";
 import { RecommendedActions } from "./recommended-actions";
 import { ResponseSection } from "./response-section";
+import { StreamingMessage } from "./streaming-message";
+import type { ResponseLifecycle } from "./streaming-types";
+import streamingStyles from "./streaming-states.module.css";
 
 type ResponseCardProps = {
   prompt: string;
@@ -38,6 +42,7 @@ type ResponseCardProps = {
   suggestions?: Suggestion[];
   onSuggestedPrompt: (prompt: string) => void;
   onFeedback?: (feedback: Feedback) => void;
+  lifecycle?: ResponseLifecycle;
 };
 
 type Feedback = "helpful" | "not-helpful" | null;
@@ -84,12 +89,21 @@ export function AiResponseCard({
   suggestions = [],
   onSuggestedPrompt,
   onFeedback,
+  lifecycle,
 }: ResponseCardProps) {
   const agentStatusId = useId();
   const sourcesId = useId();
   const [copied, setCopied] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>(null);
   const response = presentation ?? createPendingPresentation(prompt);
+  const isLoading = lifecycle?.phase === "loading";
+  const isStreaming = lifecycle?.phase === "streaming";
+  const streamProgress = lifecycle?.progress ?? 1;
+  const showDiagnostics = !isStreaming || streamProgress >= .24;
+  const showRecommendation = !isStreaming || streamProgress >= .63;
+  const showCode = !isStreaming || streamProgress >= .84;
+  const showSources = !isStreaming || streamProgress >= .96;
+  const responseReady = !lifecycle || lifecycle.phase === "complete";
 
   async function copyResponse() {
     const sourceText = citations.length > 0
@@ -126,44 +140,62 @@ export function AiResponseCard({
           <time dateTime={timestamp}>{formatTimestamp(timestamp)}</time>
         </header>
 
-        <div className={styles.presentationGrid}>
+        {isLoading ? (
+          <LoadingState activeStep={lifecycle.activeStep} />
+        ) : (
+        <div className={`${styles.presentationGrid} ${isStreaming ? streamingStyles.streamingRegion : ""}`}>
           <div className={styles.responseSurface}>
             <ResponseSection title="Analysis" icon={SearchCheck} tone="analysis" delay={40}>
-              <p>{response.analysis}</p>
+              <p>
+                <StreamingMessage text={response.analysis} progress={streamProgress} range={[0, .29]} streaming={isStreaming} />
+              </p>
             </ResponseSection>
 
-            <div className={styles.diagnosticGrid}>
+            {showDiagnostics && <div className={styles.diagnosticGrid}>
               <ResponseSection title="Problem detected" icon={ShieldAlert} tone="warning" delay={100}>
-                <p>{response.problemDetected}</p>
+                <p>
+                  <StreamingMessage text={response.problemDetected} progress={streamProgress} range={[.24, .51]} streaming={isStreaming} />
+                </p>
               </ResponseSection>
               <ResponseSection title="Why this happens" icon={Lightbulb} tone="explanation" delay={160}>
-                <p>{response.whyThisHappens}</p>
+                <p>
+                  <StreamingMessage text={response.whyThisHappens} progress={streamProgress} range={[.48, .72]} streaming={isStreaming} />
+                </p>
               </ResponseSection>
-            </div>
+            </div>}
 
-            <ResponseSection title="Recommended fix" icon={Wrench} tone="success" delay={220}>
-              <p>{response.recommendedFix}</p>
-              {response.codeExample && (
+            {showRecommendation && <ResponseSection title="Recommended fix" icon={Wrench} tone="success" delay={220}>
+              <p>
+                <StreamingMessage text={response.recommendedFix} progress={streamProgress} range={[.63, .88]} streaming={isStreaming} />
+              </p>
+              {response.codeExample && showCode && (
                 <>
                   <ProfessionalCodeBlock
                     fileName={response.codeExample.fileName}
                     language={response.codeExample.language}
                     lines={response.codeExample.lines}
+                    revealing={isStreaming}
                   />
                   {response.codeExample.note && (
                     <p className={styles.codeNote}>{response.codeExample.note}</p>
                   )}
                 </>
               )}
-            </ResponseSection>
+            </ResponseSection>}
 
-            <SourcesPanel citations={citations} headingId={sourcesId} />
+            {showSources && <SourcesPanel citations={citations} headingId={sourcesId} />}
+            {isStreaming && (
+              <span className={streamingStyles.streamingStatus} role="status">
+                Liara is generating the response.
+              </span>
+            )}
           </div>
 
           <AgentStatus agentState={agentState} headingId={agentStatusId} />
         </div>
+        )}
 
-        <div className={styles.responseInteractions} aria-label="Response actions">
+        {responseReady && <div className={styles.responseInteractions} aria-label="Response actions">
           <button
             type="button"
             className={feedback === "helpful" ? styles.interactionActive : ""}
@@ -189,13 +221,13 @@ export function AiResponseCard({
           <span className={styles.interactionStatus} aria-live="polite">
             {copied ? "Response copied" : feedback === "helpful" ? "Marked helpful" : feedback === "not-helpful" ? "Feedback noted" : ""}
           </span>
-        </div>
+        </div>}
 
-        <RecommendedActions
+        {responseReady && <RecommendedActions
           suggestions={suggestions}
           onSuggestedPrompt={onSuggestedPrompt}
           onRetry={() => onSuggestedPrompt(prompt)}
-        />
+        />}
       </div>
     </article>
   );

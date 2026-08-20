@@ -6,6 +6,7 @@ import type { AgentState, Citation, Suggestion } from "@/contracts";
 
 import { AiResponseCard } from "./ai-response-card";
 import type { AiResponsePresentation } from "./ai-response-model";
+import type { ResponseLifecycle } from "./streaming-types";
 import styles from "./chat-workspace.module.css";
 
 export type ChatEntry = {
@@ -16,6 +17,7 @@ export type ChatEntry = {
   agentState?: AgentState;
   citations?: Citation[];
   suggestions?: Suggestion[];
+  lifecycle?: ResponseLifecycle;
 };
 
 type ChatWorkspaceProps = {
@@ -48,12 +50,23 @@ function UserMessage({ entry }: { entry: ChatEntry }) {
 
 export function ChatWorkspace({ entries, composer, citations = [], onSuggestedPrompt }: ChatWorkspaceProps) {
   const streamRef = useRef<HTMLDivElement>(null);
+  const latestLifecycle = entries.at(-1)?.lifecycle;
 
   useEffect(() => {
     const stream = streamRef.current;
     if (!stream) return;
     stream.scrollTo({ top: stream.scrollHeight, behavior: "smooth" });
   }, [entries.length]);
+
+  useEffect(() => {
+    const stream = streamRef.current;
+    if (!stream || !latestLifecycle) return;
+
+    const distanceFromBottom = stream.scrollHeight - stream.scrollTop - stream.clientHeight;
+    if (distanceFromBottom < 180) {
+      stream.scrollTo({ top: stream.scrollHeight, behavior: "smooth" });
+    }
+  }, [latestLifecycle]);
 
   return (
     <section className={styles.chatWorkspace} aria-label="Chat workspace">
@@ -69,6 +82,7 @@ export function ChatWorkspace({ entries, composer, citations = [], onSuggestedPr
                 agentState={entry.agentState}
                 citations={entry.citations ?? (index === entries.length - 1 ? citations : [])}
                 suggestions={entry.suggestions}
+                lifecycle={entry.lifecycle}
                 onSuggestedPrompt={onSuggestedPrompt}
               />
             </div>

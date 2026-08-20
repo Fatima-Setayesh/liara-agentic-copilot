@@ -48,4 +48,42 @@ describe("AiResponseCard", () => {
     expect(html).toContain("No activity event received");
     expect(html).not.toContain(">Completed<");
   });
+
+  it("shows the premium loading surface before the first token", () => {
+    const html = renderToStaticMarkup(
+      <AiResponseCard
+        prompt="Original prompt"
+        timestamp="2026-08-20T12:00:00.000Z"
+        citations={[]}
+        presentation={response}
+        agentState="retrieving"
+        lifecycle={{ phase: "loading", progress: 0, activeStep: 2 }}
+        onSuggestedPrompt={vi.fn()}
+      />,
+    );
+
+    expect(html).toContain("Establishing response context");
+    expect(html).toContain("Checking official sources");
+    expect(html).not.toContain(">Analysis<");
+    expect(html).not.toContain("Response actions");
+  });
+
+  it("reveals response sections progressively while streaming", () => {
+    const html = renderToStaticMarkup(
+      <AiResponseCard
+        prompt="Original prompt"
+        timestamp="2026-08-20T12:00:00.000Z"
+        citations={[]}
+        presentation={response}
+        agentState="generating"
+        lifecycle={{ phase: "streaming", progress: .12, activeStep: 4 }}
+        onSuggestedPrompt={vi.fn()}
+      />,
+    );
+
+    expect(html).toContain(">Analysis<");
+    expect(html).toContain("Liara is generating the response.");
+    expect(html).not.toContain("Problem detected");
+    expect(html).not.toContain("Response actions");
+  });
 });

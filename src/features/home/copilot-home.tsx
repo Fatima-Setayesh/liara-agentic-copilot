@@ -39,7 +39,8 @@ import {
 } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
 
-import { ChatWorkspace, type ChatEntry } from "@/features/chat/chat-workspace";
+import { ChatWorkspace } from "@/features/chat/chat-workspace";
+import { useStreamingConversation } from "@/features/chat/use-streaming-conversation";
 
 import styles from "./copilot-home.module.css";
 
@@ -437,18 +438,7 @@ export function CopilotHome() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [rightPanelCollapsed, setRightPanelCollapsed] = useState(true);
   const [mobileInspectorOpen, setMobileInspectorOpen] = useState(false);
-  const [chatEntries, setChatEntries] = useState<ChatEntry[]>([]);
-
-  function addChatEntry(prompt: string) {
-    setChatEntries((entries) => [
-      ...entries,
-      {
-        id: `message-${Date.now()}-${entries.length + 1}`,
-        prompt,
-        sentAt: new Date().toISOString(),
-      },
-    ]);
-  }
+  const { chatEntries, addChatEntry } = useStreamingConversation();
 
   function openMobileNavigation() {
     setMobileInspectorOpen(false);
