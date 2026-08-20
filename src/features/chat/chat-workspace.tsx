@@ -2,15 +2,20 @@
 
 import { ReactNode, useEffect, useRef } from "react";
 
-import type { Citation } from "@/contracts";
+import type { AgentState, Citation, Suggestion } from "@/contracts";
 
 import { AiResponseCard } from "./ai-response-card";
+import type { AiResponsePresentation } from "./ai-response-model";
 import styles from "./chat-workspace.module.css";
 
 export type ChatEntry = {
   id: string;
   prompt: string;
   sentAt: string;
+  response?: AiResponsePresentation;
+  agentState?: AgentState;
+  citations?: Citation[];
+  suggestions?: Suggestion[];
 };
 
 type ChatWorkspaceProps = {
@@ -41,7 +46,7 @@ function UserMessage({ entry }: { entry: ChatEntry }) {
   );
 }
 
-export function ChatWorkspace({ entries, composer, citations = [] }: ChatWorkspaceProps) {
+export function ChatWorkspace({ entries, composer, citations = [], onSuggestedPrompt }: ChatWorkspaceProps) {
   const streamRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -58,8 +63,13 @@ export function ChatWorkspace({ entries, composer, citations = [] }: ChatWorkspa
             <div className={styles.exchange} key={entry.id}>
               <UserMessage entry={entry} />
               <AiResponseCard
+                prompt={entry.prompt}
                 timestamp={entry.sentAt}
-                citations={index === entries.length - 1 ? citations : []}
+                presentation={entry.response}
+                agentState={entry.agentState}
+                citations={entry.citations ?? (index === entries.length - 1 ? citations : [])}
+                suggestions={entry.suggestions}
+                onSuggestedPrompt={onSuggestedPrompt}
               />
             </div>
           ))}

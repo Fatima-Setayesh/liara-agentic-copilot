@@ -1,21 +1,20 @@
-# Conversation Interface Design QA
+# AI Response Presentation Design QA
 
-- Source visual truth: `C:\Users\omidi\Pictures\Screenshots\Screenshot 2026-08-20 181006.png`
-- Source pixels: 2200 × 1320
-- Implementation target: `src/features/chat/ai-response-card.tsx`, `src/features/chat/chat-workspace.tsx`, and `src/features/chat/chat-workspace.module.css`
+- Source visual truth: `C:\Users\omidi\Pictures\Screenshots\Screenshot 2026-08-20 185125.png`
+- Implementation target: `src/features/chat/ai-response-card.tsx` and its response-only child components and CSS module
 - Protected baseline: current homepage, ambient motion, header, sidebars, prompt composer, quick actions, and shell layout
-- Intended viewport: desktop conversation state at the reference aspect ratio, plus responsive mobile fallbacks
+- Intended viewport: desktop conversation state shown in the reference, plus responsive tablet and mobile fallbacks
 - Implementation screenshot path: unavailable
 - Implementation pixels / CSS viewport / density: unavailable because neither configured browser surface is connected
 - State: first user message submitted and conversation workspace visible
 
 ## Full-view comparison evidence
 
-Blocked. The source image was opened and inspected, but the in-app browser and Chrome browser connections both returned unavailable. A same-state rendered implementation could not be captured or placed beside the source for visual comparison.
+Blocked. The source image was opened and inspected, but the in-app browser connection returned unavailable. A same-state rendered implementation could not be captured or placed beside the source for visual comparison.
 
 ## Focused region comparison evidence
 
-Blocked. Focused comparisons of the right-aligned user message, Liara identity row, response surface, disclosure, actions, and docked composer require a browser-rendered screenshot.
+Blocked. Focused comparisons of the structured sections, workflow rail, code block, response interactions, and recommended actions require a browser-rendered screenshot.
 
 ## Findings
 
@@ -27,15 +26,15 @@ Blocked. Focused comparisons of the right-aligned user message, Liara identity r
 
 ## Open questions
 
-- The repository does not yet provide a grounded chat route. The presentation therefore shows an honest pending response instead of fabricated Liara guidance; real answer content remains a separate backend integration.
+- The repository does not yet provide a grounded chat route. The response accepts typed presentation data, activity states, suggestions, and citations, but shows an honest waiting state until those parts arrive.
 
 ## Required fidelity surfaces
 
-- Fonts and typography: the conversation state inherits the existing application font stack and uses the current compact developer-tool hierarchy.
-- Spacing and layout rhythm: source inspection guided a linear right-aligned user message, left-aligned Liara response, response actions beneath the glass surface, and a persistent follow-up composer.
-- Colors and visual tokens: only the existing dark glass, cyan, mint, and muted gray language is used.
-- Image quality and asset fidelity: the existing `/liara-logo.png` is reused for Liara identity; existing Lucide icons provide interaction symbols.
-- Copy and content: the pending copy explicitly avoids inventing Liara commands, configuration, diagnoses, or source metadata.
+- Fonts and typography: the response inherits the existing application font stack and keeps developer content and code visually distinct.
+- Spacing and layout rhythm: only the AI response surface is extended with structured sections, a workflow rail, code presentation, interactions, and recommended actions.
+- Colors and visual tokens: only the existing dark glass, cyan, mint, warning amber, and muted gray language is used.
+- Image quality and asset fidelity: the existing `/liara-logo.png` and installed Lucide icon set are reused; no new approximate assets were introduced.
+- Copy and content: injected presentation data is rendered directly, and the no-data fallback explicitly avoids inventing Liara commands, configuration, diagnoses, progress, or source metadata.
 
 ## Protected empty-state verification
 
@@ -46,12 +45,15 @@ Blocked. Focused comparisons of the right-aligned user message, Liara identity r
 
 ## Interaction checks
 
-- Source inspection confirms a successful composer submit appends the first entry and swaps only the center content into conversation mode.
-- User and Liara timestamps use semantic `time` elements.
-- Each new exchange has its own entrance animation and unique accessible heading IDs.
+- Each chat entry can carry its own structured response, contract-backed agent state, suggestions, citations, and code example.
+- In the absence of a real `data-agent-state` event, the workflow rail shows a waiting state and makes no completed-work claim.
+- Contract states map to one active user-facing step and never expose hidden reasoning.
+- Backend suggestions become executable prompt actions; fallback log/configuration actions also continue the conversation.
+- Documentation opens the official Liara documentation and Retry resubmits the original prompt.
 - Helpful and not-helpful feedback states toggle independently with `aria-pressed`.
-- Copy response reports success through an `aria-live` status and handles clipboard rejection without an unhandled promise.
-- The technical-details disclosure uses native keyboard-accessible `details` and `summary` elements.
+- Copy response uses the currently rendered structured data and verified citation URLs, reports success through an `aria-live` status, and handles clipboard rejection without an unhandled promise.
+- Code copy uses the rendered token lines, while line numbers remain excluded from clipboard content.
+- Response controls meet a 44px minimum target, have visible keyboard focus styles, and respect reduced-motion preferences.
 - Follow-up submissions append exchanges and trigger smooth stream scrolling.
 - Browser click testing, focus inspection, console inspection, and screenshot comparison remain blocked.
 
@@ -59,13 +61,13 @@ Blocked. Focused comparisons of the right-aligned user message, Liara identity r
 
 - ESLint passed with zero warnings.
 - TypeScript strict-mode typecheck passed.
-- Vitest passed: 1 file, 4 tests.
+- Vitest passed: 3 files, 11 tests, including rendered response/status integration coverage.
 - Next.js production build passed.
 - `git diff --check` passed.
 
 ## Comparison history
 
-- Source review: removed unrelated progress and suggested-action dashboards from the conversation surface, moved the user avatar to the reference-side placement, moved feedback/copy actions beneath the Liara response, and preserved the existing composer and shell.
+- Source review: added the response-only structured presentation, workflow rail, professional code block, response interactions, and recommended actions while preserving the existing composer and shell.
 - Rendered comparison: blocked because no browser surface is connected; no visual pass is claimed.
 
 ## Implementation checklist
