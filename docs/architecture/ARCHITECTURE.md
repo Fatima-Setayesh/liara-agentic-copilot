@@ -1,6 +1,6 @@
 # Architecture
 
-Status: foundation baseline
+Status: foundation plus retrieval baseline
 Last reviewed: 2026-08-20
 
 ## Goals
@@ -24,7 +24,7 @@ flowchart LR
     API --> Observability[Safe structured logs and metrics]
 ```
 
-Only the UI scaffold and protected contracts exist today. Server components in the diagram are planned boundaries, not claimed implementations.
+The UI scaffold, protected contracts, and server-only retrieval layer exist today. Agent, provider, persistence, observability, and chat API components in the diagram remain planned boundaries, not claimed implementations.
 
 ## Deployment unit
 
@@ -108,20 +108,20 @@ No hidden chain-of-thought is requested or transmitted. `reasoning` and `executi
 
 The primary corpus is the official [`liara-cloud/docs`](https://github.com/liara-cloud/docs) repository, with published canonical pages at [`docs.liara.ir`](https://docs.liara.ir/).
 
-The source repository primarily stores content in `src/pages/**/*.mdx`. A future ingestion pipeline should:
+The implemented baseline:
 
-1. fetch a pinned official revision
-2. parse MDX structurally rather than treating JSX boilerplate as prose
-3. retain prose, warnings, tab labels/content, commands, headings, and section IDs
-4. derive candidate published routes by removing `src/pages/` and `.mdx`
-5. validate canonical URLs against the official sitemap
-6. chunk along page and section boundaries with overlap only where measured useful
-7. store source revision/content hash, page and section identity, language, category, and chunk order
-8. build a retrieval index appropriate to measured corpus size and quality needs
+1. loads `src/pages/**/*.mdx` from an explicit local checkout and records a caller-supplied full Git revision
+2. validates paths, hashes, size limits, symlinks, cancellation, and the official category allowlist
+3. parses MDX structurally without compiling or executing JSX/expressions
+4. retains static prose, warnings, tabs, steps, tables, FAQ answers, commands, headings, and section IDs
+5. maps source paths deterministically to canonical trailing-slash `docs.liara.ir` URLs and revision-pinned repository URLs
+6. chunks on section/block boundaries, preserving code blocks and bounded prose overlap
+7. ranks a bounded in-memory index with Persian/technical lexical normalization, BM25-like scoring, metadata boosts, filters, and conservative duplicate suppression
+8. returns a typed `no_matches` outcome when evidence is absent; this is distinct from ingestion/retrieval failure
 
-The official repository already contains `indexer/` and `sitemap/` areas; inspect and reuse them where appropriate before building a duplicate crawler.
+The generated `public/llms` Markdown is not authoritative because corpus audit found lost table rows, corrupted JSX/code, and generated content for an empty source page. The raw MDX at a pinned revision remains the source of truth. A full-corpus integration test covers all 1,142 audited files and checks known loss-prone evidence.
 
-No vector database or embedding provider has been selected. The next retrieval task must benchmark a low-complexity lexical baseline and inspect the corpus before justifying storage infrastructure.
+No vector database or embedding provider is selected. The in-memory lexical baseline avoids network calls, per-query model cost, and deployment dependencies; measure its quality against an evaluation set before proposing hybrid/vector retrieval or a persisted index.
 
 ## Citation flow
 
@@ -247,7 +247,7 @@ Verified source pages:
 | Deployable shape | One Next.js app | Split only for verified platform or scaling need |
 | Stream protocol | AI SDK UI Message Stream | Couples shared parts to AI SDK semantics but avoids custom protocol risk |
 | Model/provider | Deferred behind adapter | Select after quality, access, latency, and cost evaluation |
-| Retrieval index | Deferred | Benchmark corpus and lexical baseline before vector infrastructure |
+| Retrieval index | In-memory lexical baseline | Add persistence, hybrid search, or vectors only when evaluation shows a quality/deployment benefit |
 | Database | Deferred | Select only when conversation/index persistence requirements are concrete |
 | Authentication | Deferred | Add only for a validated identity-dependent product flow |
 | Monitoring vendor | Deferred | Structured logs first; add only for measurable value |

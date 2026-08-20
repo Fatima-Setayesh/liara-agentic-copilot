@@ -4,15 +4,17 @@ A production-minded, grounded developer and troubleshooting copilot for Liara. T
 
 ## Current status
 
-**Foundation only.** The repository currently includes:
+**Foundation plus retrieval baseline.** The repository currently includes:
 
 - a minimal Next.js App Router scaffold
 - strict TypeScript and Tailwind CSS with a minimal optional shadcn-compatible scaffold
 - Vercel AI SDK streaming contract planning without a chat implementation
 - versioned runtime-validated chat contracts and contract tests
+- server-only ingestion, structural MDX normalization, section-aware chunking,
+  source policy, and an in-memory lexical retriever for the official Liara corpus
 - architecture, governance, rubric tracking, and lightweight CI
 
-The chat API, model provider, RAG pipeline, persistence, rate limiting, monitoring, deployment configuration, and product UI are **planned, not implemented**.
+The chat API, model provider, grounded answer-generation flow, persistence, rate limiting, monitoring, deployment configuration, and product UI are **planned, not implemented**. The retrieval baseline does not yet produce user-facing answers or citations.
 
 ## Architecture summary
 
@@ -28,7 +30,7 @@ product UI -> versioned chat/API boundary -> server orchestration
 
 - `src/app/`: App Router pages and future API boundaries
 - `src/contracts/`: shared, versioned, protected request/stream/error contracts
-- `src/server/`: future server-only domain and infrastructure modules
+- `src/server/`: server-only retrieval today; other domain and infrastructure modules as they are implemented
 - `src/components/` and `src/features/`: frontend-owned UI implementation when added
 
 See [the architecture document](docs/architecture/ARCHITECTURE.md) and [product specification](SPEC.md).
@@ -42,6 +44,7 @@ See [the architecture document](docs/architecture/ARCHITECTURE.md) and [product 
 - Tailwind CSS 4
 - Vercel AI SDK 7 for typed streaming and shared message contracts
 - Zod 4 for trust-boundary schemas
+- unified/remark for non-executing structural MDX parsing
 - Vitest 4 for focused unit tests
 
 The checked-in Radix-based shadcn configuration and base stylesheet are replaceable frontend scaffold details, not scoring requirements or architecture drivers. Repo-scoped UI skills are development-only aids and do not ship in the application bundle. No shadcn or AI Elements component is checked in; Fatima can add only the components justified by real UI work.
@@ -138,7 +141,9 @@ Liara-specific answers must prefer:
 - [Published Liara documentation](https://docs.liara.ir/)
 - [Official Liara documentation repository](https://github.com/liara-cloud/docs)
 
-The future ingestion pipeline must preserve canonical URL, repository path, page and section title, category, chunk identity/order, and source revision. If official evidence is insufficient, the assistant must say so.
+The implemented retrieval baseline reads `src/pages/**/*.mdx` from an explicit local checkout at a caller-supplied full Git revision. It preserves canonical URL, revision-pinned repository URL, repository path, page/section identity, conservative category metadata, content hash, and chunk identity/order. It parses MDX structurally without compiling or executing it, and represents an empty or irrelevant query as `no_matches` rather than a backend failure.
+
+The generated `public/llms` Markdown is not the authoritative input: audit fixtures showed dropped table cells and corrupted code. Fetch/refresh automation and a persisted production index remain deferred until the deployment shape is known. If official evidence is insufficient, the later assistant flow must say so.
 
 ## Liara deployment
 

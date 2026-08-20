@@ -20,7 +20,7 @@ Status vocabulary: `Foundation`, `Planned`, `In progress`, `Complete`, `Blocked`
 
 | Category | Points | Planned implementation | Acceptance evidence | Status | Owner |
 | --- | ---: | --- | --- | --- | --- |
-| Answer Quality — authoritative retrieval | 30 | MDX-aware Liara corpus ingestion, bounded retrieval, ranking, and insufficient-evidence behavior | Evaluation set shows relevant official passages for simple and multi-document questions; no-result case refuses to invent facts | Planned | Backend / Platform |
+| Answer Quality — authoritative retrieval | 30 | MDX-aware Liara corpus ingestion, bounded retrieval, ranking, and insufficient-evidence behavior | Evaluation set shows relevant official passages for simple and multi-document questions; no-result case refuses to invent facts | In progress | Backend / Platform |
 | Answer Quality — citation integrity | 20 | Source metadata preserved from document through answer; citations reference only retrieved official material | Automated citation-integrity tests plus judge-visible links that resolve to the claimed page/section | Foundation | Backend / Platform (data); Frontend (presentation) |
 | Answer Quality — troubleshooting and clarification | 20 | Selective clarification and multi-step diagnostic answers grounded in retrieved material | Scenario tests for ambiguous deployment failure and sufficiently specific Next.js deployment question | Planned | Backend / Platform |
 | Answer Quality — quality evaluation | 10 | Versioned representative evaluation cases covering correctness, completeness, groundedness, and honest uncertainty | Repeatable evaluation report and reviewed failure examples | Planned | Backend / Platform |
@@ -60,5 +60,7 @@ Status vocabulary: `Foundation`, `Planned`, `In progress`, `Complete`, `Blocked`
   architecture documentation and ADRs.
 - The repository provides strict TypeScript, lint, unit-test, build, and CI
   commands.
-- No row claiming actual retrieval, model orchestration, persistence, rate
-  limiting, production streaming, or deployment is marked complete.
+- The server retrieval baseline has source-policy, normalization, chunking,
+  ranking, no-result, duplicate, cancellation, and full-corpus integration tests.
+- No row claiming end-to-end grounded answers, model orchestration, persistence,
+  rate limiting, production streaming, or deployment is marked complete.

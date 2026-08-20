@@ -57,7 +57,7 @@ The product must eventually support:
 - streaming answer delivery with real activity states, cancellation, and safe errors
 - graceful no-result and provider/retrieval failure behavior
 
-Foundation status: only the application scaffold, governance, versioned chat contract, and validation infrastructure exist.
+Implementation status: the application scaffold, governance, versioned chat contract, validation infrastructure, and server-only authoritative retrieval baseline exist. Chat orchestration, model integration, and user-facing grounded answers are not implemented.
 
 ## 5. Answer quality requirements
 
