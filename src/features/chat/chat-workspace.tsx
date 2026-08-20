@@ -30,16 +30,18 @@ function formatTimestamp(timestamp: string) {
 function UserMessage({ entry }: { entry: ChatEntry }) {
   return (
     <article className={styles.userMessageRow} aria-label="Your message">
-      <span className={styles.userAvatar} aria-hidden="true">L</span>
-      <div className={styles.userMessageBubble}>
-        <p>{entry.prompt}</p>
+      <div className={styles.userMessageColumn}>
         <time dateTime={entry.sentAt}>{formatTimestamp(entry.sentAt)}</time>
+        <div className={styles.userMessageBubble}>
+          <p>{entry.prompt}</p>
+        </div>
       </div>
+      <span className={styles.userAvatar} aria-hidden="true">L</span>
     </article>
   );
 }
 
-export function ChatWorkspace({ entries, composer, citations = [], onSuggestedPrompt }: ChatWorkspaceProps) {
+export function ChatWorkspace({ entries, composer, citations = [] }: ChatWorkspaceProps) {
   const streamRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -56,10 +58,8 @@ export function ChatWorkspace({ entries, composer, citations = [], onSuggestedPr
             <div className={styles.exchange} key={entry.id}>
               <UserMessage entry={entry} />
               <AiResponseCard
-                prompt={entry.prompt}
                 timestamp={entry.sentAt}
                 citations={index === entries.length - 1 ? citations : []}
-                onSuggestedPrompt={onSuggestedPrompt}
               />
             </div>
           ))}
