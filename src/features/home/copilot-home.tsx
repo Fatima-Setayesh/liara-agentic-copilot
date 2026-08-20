@@ -14,6 +14,7 @@ import {
   Command,
   Database,
   FileCode2,
+  Gauge,
   Globe2,
   History,
   Info,
@@ -25,6 +26,9 @@ import {
   Paperclip,
   Plus,
   Rocket,
+  ScrollText,
+  ServerCog,
+  Settings2,
   ShieldCheck,
   Sparkles,
   Target,
@@ -64,6 +68,12 @@ const suggestions = [
   { label: "Debug a failed build", icon: Bug, prompt: "Help me debug a failed build on Liara." },
   { label: "Connect PostgreSQL", icon: Database, prompt: "How do I connect my app to PostgreSQL on Liara?" },
   { label: "Configure a domain", icon: Globe2, prompt: "How can I configure a custom domain on Liara?" },
+  { label: "Setup environment variables", icon: Settings2, prompt: "How do I set up environment variables for my Liara app?" },
+  { label: "Optimize deployment", icon: Gauge, prompt: "How can I optimize my deployment workflow on Liara?" },
+  { label: "Configure CDN", icon: Network, prompt: "How do I configure a CDN for my application on Liara?" },
+  { label: "Check application logs", icon: ScrollText, prompt: "Show me how to inspect application logs on Liara." },
+  { label: "Scale application", icon: ServerCog, prompt: "How can I scale my application on Liara?" },
+  { label: "Setup custom domain", icon: Globe2, prompt: "Guide me through setting up a custom domain on Liara." },
 ];
 
 const benefits = [
@@ -306,13 +316,29 @@ function PromptComposer() {
         </div>
       </form>
 
-      <div className={styles.suggestionList} aria-label="Suggested prompts">
-        {suggestions.map(({ label, prompt: suggestionPrompt, icon: Icon }) => (
-          <button type="button" key={label} onClick={() => setPrompt(suggestionPrompt)}>
-            <Icon size={19} strokeWidth={1.7} />
-            <span>{label}</span>
-          </button>
-        ))}
+      <div className={styles.suggestionViewport} aria-label="Suggested prompts">
+        <div className={styles.suggestionTrack}>
+          {[false, true].map((isDuplicate) => (
+            <div
+              className={styles.suggestionGroup}
+              aria-hidden={isDuplicate || undefined}
+              key={isDuplicate ? "duplicate" : "primary"}
+            >
+              {suggestions.map(({ label, prompt: suggestionPrompt, icon: Icon }) => (
+                <button
+                  className={styles.suggestionCard}
+                  type="button"
+                  key={label}
+                  onClick={() => setPrompt(suggestionPrompt)}
+                  tabIndex={isDuplicate ? -1 : 0}
+                >
+                  <Icon size={19} strokeWidth={1.7} />
+                  <span>{label}</span>
+                </button>
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -324,6 +350,7 @@ function AmbientBackground() {
       <div className={styles.auroraOne} />
       <div className={styles.auroraTwo} />
       <div className={styles.waveGrid} />
+      <div className={styles.lightTrails} />
       <div className={styles.dustLayer} />
     </div>
   );
