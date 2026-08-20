@@ -27,6 +27,14 @@ export function useStreamingConversation() {
     scheduledHandles.current.add(handle);
   }, []);
 
+  const clearScheduledWork = useCallback(() => {
+    scheduledHandles.current.forEach((handle) => {
+      window.clearTimeout(handle);
+      window.clearInterval(handle);
+    });
+    scheduledHandles.current.clear();
+  }, []);
+
   const addChatEntry = useCallback((prompt: string) => {
     const entryId = `message-${Date.now()}-${crypto.randomUUID()}`;
     const entry: ChatEntry = {
@@ -90,13 +98,12 @@ export function useStreamingConversation() {
     }, FIRST_TOKEN_DELAY);
   }, [schedule, updateEntry]);
 
-  useEffect(() => () => {
-    scheduledHandles.current.forEach((handle) => {
-      window.clearTimeout(handle);
-      window.clearInterval(handle);
-    });
-    scheduledHandles.current.clear();
-  }, []);
+  const resetConversation = useCallback(() => {
+    clearScheduledWork();
+    setChatEntries([]);
+  }, [clearScheduledWork]);
 
-  return { chatEntries, addChatEntry };
+  useEffect(() => () => clearScheduledWork(), [clearScheduledWork]);
+
+  return { chatEntries, addChatEntry, resetConversation };
 }

@@ -23,7 +23,6 @@ import {
   Menu,
   MessageCircle,
   MessageSquareText,
-  MoreHorizontal,
   Network,
   Paperclip,
   PanelRightOpen,
@@ -41,6 +40,9 @@ import { FormEvent, useMemo, useState } from "react";
 
 import { ChatWorkspace } from "@/features/chat/chat-workspace";
 import { useStreamingConversation } from "@/features/chat/use-streaming-conversation";
+import { ConversationHistory } from "@/features/history/conversation-history";
+import type { ConversationRecord } from "@/features/history/conversation-history-model";
+import { useConversationHistory } from "@/features/history/use-conversation-history";
 
 import styles from "./copilot-home.module.css";
 
@@ -49,23 +51,10 @@ type NavigationItem = {
   icon: LucideIcon;
 };
 
-type Conversation = {
-  title: string;
-  time: string;
-};
-
 const navigation: NavigationItem[] = [
   { label: "Chat", icon: MessageCircle },
   { label: "Sources", icon: BookOpen },
   { label: "History", icon: History },
-];
-
-const conversations: Conversation[] = [
-  { title: "Fix build error on Liara", time: "2m ago" },
-  { title: "Connect PostgreSQL", time: "1h ago" },
-  { title: "Configure custom domain", time: "Yesterday" },
-  { title: "Debug API timeout", time: "2 days ago" },
-  { title: "Environment variables setup", time: "3 days ago" },
 ];
 
 const suggestions = [
@@ -121,12 +110,30 @@ function BrandMark({ compact = false }: { compact?: boolean }) {
 function Sidebar({
   collapsed,
   open,
+  conversations,
+  activeConversationId,
+  historyLoading,
   onClose,
+  onNewConversation,
+  onSelectConversation,
+  onRenameConversation,
+  onDeleteConversation,
+  onToggleArchiveConversation,
+  onTogglePinConversation,
   onToggleCollapsed,
 }: {
   collapsed: boolean;
   open: boolean;
+  conversations: ConversationRecord[];
+  activeConversationId: string | null;
+  historyLoading: boolean;
   onClose: () => void;
+  onNewConversation: () => void;
+  onSelectConversation: (id: string) => void;
+  onRenameConversation: (id: string, title: string) => void;
+  onDeleteConversation: (id: string) => void;
+  onToggleArchiveConversation: (id: string) => void;
+  onTogglePinConversation: (id: string) => void;
   onToggleCollapsed: () => void;
 }) {
   const [activeItem, setActiveItem] = useState("Chat");
@@ -167,7 +174,12 @@ function Sidebar({
         <button
           className={styles.newConversation}
           type="button"
-          onClick={() => setActiveItem("Chat")}
+          onClick={() => {
+            setActiveItem("Chat");
+            onNewConversation();
+          }}
+          data-active={(activeItem === "Chat" && activeConversationId === null) || undefined}
+          aria-pressed={activeItem === "Chat" && activeConversationId === null}
           aria-label="New Chat"
           title={collapsed ? "New Chat" : undefined}
         >
@@ -195,18 +207,19 @@ function Sidebar({
         <div className={styles.sidebarDivider} />
         <section className={styles.recentSection} aria-labelledby="recent-heading">
           <h2 id="recent-heading">Recent conversations</h2>
-          <div className={styles.conversationList}>
-            {conversations.map((conversation) => (
-              <button className={styles.conversationItem} type="button" key={conversation.title}>
-                <MessageSquareText size={15} strokeWidth={1.7} />
-                <span className={styles.conversationCopy}>
-                  <span>{conversation.title}</span>
-                  <small>{conversation.time}</small>
-                </span>
-                <MoreHorizontal size={16} className={styles.moreIcon} />
-              </button>
-            ))}
-          </div>
+          <ConversationHistory
+            conversations={conversations}
+            activeConversationId={activeConversationId}
+            loading={historyLoading}
+            onSelect={(id) => {
+              setActiveItem("Chat");
+              onSelectConversation(id);
+            }}
+            onRename={onRenameConversation}
+            onDelete={onDeleteConversation}
+            onToggleArchive={onToggleArchiveConversation}
+            onTogglePin={onTogglePinConversation}
+          />
         </section>
 
         <div className={styles.profileArea}>
@@ -438,7 +451,34 @@ export function CopilotHome() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [rightPanelCollapsed, setRightPanelCollapsed] = useState(true);
   const [mobileInspectorOpen, setMobileInspectorOpen] = useState(false);
-  const { chatEntries, addChatEntry } = useStreamingConversation();
+  const { chatEntries, addChatEntry, resetConversation } = useStreamingConversation();
+  const conversationHistory = useConversationHistory();
+
+  function submitPrompt(prompt: string) {
+    conversationHistory.registerPrompt(prompt);
+    addChatEntry(prompt);
+  }
+
+  function startNewConversation() {
+    resetConversation();
+    conversationHistory.startNewConversation();
+    setSidebarOpen(false);
+  }
+
+  function selectConversation(id: string) {
+    conversationHistory.selectConversation(id);
+    if (window.matchMedia("(max-width: 1020px)").matches) setSidebarOpen(false);
+  }
+
+  function deleteConversation(id: string) {
+    if (conversationHistory.activeConversationId === id) resetConversation();
+    conversationHistory.deleteConversation(id);
+  }
+
+  function toggleArchiveConversation(id: string) {
+    if (conversationHistory.activeConversationId === id) resetConversation();
+    conversationHistory.toggleArchived(id);
+  }
 
   function openMobileNavigation() {
     setMobileInspectorOpen(false);
@@ -468,7 +508,16 @@ export function CopilotHome() {
       <Sidebar
         collapsed={sidebarCollapsed}
         open={sidebarOpen}
+        conversations={conversationHistory.conversations}
+        activeConversationId={conversationHistory.activeConversationId}
+        historyLoading={conversationHistory.isLoading}
         onClose={() => setSidebarOpen(false)}
+        onNewConversation={startNewConversation}
+        onSelectConversation={selectConversation}
+        onRenameConversation={conversationHistory.renameConversation}
+        onDeleteConversation={deleteConversation}
+        onToggleArchiveConversation={toggleArchiveConversation}
+        onTogglePinConversation={conversationHistory.togglePinned}
         onToggleCollapsed={() => setSidebarCollapsed((collapsed) => !collapsed)}
       />
       <button
@@ -490,17 +539,17 @@ export function CopilotHome() {
                 <p>Your AI copilot for modern development.</p>
                 <HeroBenefits />
               </div>
-              <PromptComposer onSubmitPrompt={addChatEntry} />
+              <PromptComposer onSubmitPrompt={submitPrompt} />
             </section>
           ) : (
             <ChatWorkspace
               entries={chatEntries}
-              onSuggestedPrompt={addChatEntry}
+              onSuggestedPrompt={submitPrompt}
               composer={(
                 <PromptComposer
                   mode="chat"
                   showSuggestions={false}
-                  onSubmitPrompt={addChatEntry}
+                  onSubmitPrompt={submitPrompt}
                 />
               )}
             />
