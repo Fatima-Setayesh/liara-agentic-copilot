@@ -26,9 +26,6 @@ import {
   MoreHorizontal,
   Network,
   Paperclip,
-  PanelLeftClose,
-  PanelLeftOpen,
-  PanelRightClose,
   PanelRightOpen,
   Plus,
   Rocket,
@@ -41,6 +38,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
+
+import { ChatWorkspace, type ChatEntry } from "@/features/chat/chat-workspace";
 
 import styles from "./copilot-home.module.css";
 
@@ -140,31 +139,39 @@ function Sidebar({
         type="button"
       />
       <aside
+        id="primary-sidebar"
         className={`${styles.sidebar} ${collapsed ? styles.sidebarCollapsed : ""} ${open ? styles.sidebarOpen : ""}`}
         aria-label="Primary navigation"
       >
         <div className={styles.sidebarTop}>
-          <a href="#" className={styles.wordmark} aria-label="Liara Copilot home">
-            <BrandMark compact />
-            <span>Liara <strong>Copilot</strong></span>
-          </a>
           <button
-            className={styles.sidebarCollapse}
+            className={styles.brandTrigger}
             type="button"
             onClick={onToggleCollapsed}
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-expanded={!collapsed}
+            aria-controls="primary-sidebar"
+            aria-label={collapsed ? "Open Liara Copilot sidebar" : "Collapse Liara Copilot sidebar"}
           >
-            {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+            <BrandMark compact />
+            <span className={styles.wordmark}>Liara <strong>Copilot</strong></span>
+            <span className={styles.logoHoverPill} aria-hidden="true">
+              {collapsed ? "Open sidebar" : "Collapse sidebar"}
+            </span>
           </button>
           <button className={styles.mobileClose} type="button" onClick={onClose} aria-label="Close menu">
             <ChevronLeft size={20} />
           </button>
         </div>
 
-        <button className={styles.newConversation} type="button">
-          <Plus size={21} />
-          <span>New Conversation</span>
+        <button
+          className={styles.newConversation}
+          type="button"
+          onClick={() => setActiveItem("Chat")}
+          aria-label="New Chat"
+          title={collapsed ? "New Chat" : undefined}
+        >
+          <Plus size={23} strokeWidth={1.7} aria-hidden="true" />
+          <span>New Chat</span>
         </button>
 
         <nav className={styles.navList}>
@@ -175,6 +182,8 @@ function Sidebar({
               className={`${styles.navItem} ${activeItem === label ? styles.navItemActive : ""}`}
               onClick={() => setActiveItem(label)}
               aria-current={activeItem === label ? "page" : undefined}
+              aria-label={label}
+              title={collapsed ? label : undefined}
             >
               <Icon size={21} strokeWidth={1.75} />
               <span>{label}</span>
@@ -312,7 +321,28 @@ function BenefitsCard() {
   );
 }
 
-function PromptComposer() {
+function HeroBenefits() {
+  return (
+    <div className={styles.heroBenefits} aria-label="Liara Copilot benefits">
+      {benefits.map(({ title, icon: Icon }) => (
+        <span className={styles.heroBenefit} key={title}>
+          <Icon size={18} strokeWidth={1.75} aria-hidden="true" />
+          <span>{title}</span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function PromptComposer({
+  mode = "empty",
+  onSubmitPrompt,
+  showSuggestions = true,
+}: {
+  mode?: "empty" | "chat";
+  onSubmitPrompt?: (prompt: string) => void;
+  showSuggestions?: boolean;
+}) {
   const [prompt, setPrompt] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
@@ -321,12 +351,15 @@ function PromptComposer() {
   function submitPrompt(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!canSubmit) return;
+    const nextPrompt = prompt.trim();
     setSubmitted(true);
+    onSubmitPrompt?.(nextPrompt);
+    setPrompt("");
     window.setTimeout(() => setSubmitted(false), 1800);
   }
 
   return (
-    <div className={styles.composerRegion}>
+    <div className={styles.composerRegion} data-chat-composer={mode === "chat" ? "" : undefined}>
       <form className={styles.promptShell} onSubmit={submitPrompt}>
         <div className={styles.promptInner}>
           <textarea
@@ -357,30 +390,32 @@ function PromptComposer() {
         </div>
       </form>
 
-      <div className={styles.suggestionViewport} aria-label="Suggested prompts">
-        <div className={styles.suggestionTrack}>
-          {[false, true].map((isDuplicate) => (
-            <div
-              className={styles.suggestionGroup}
-              aria-hidden={isDuplicate || undefined}
-              key={isDuplicate ? "duplicate" : "primary"}
-            >
-              {suggestions.map(({ label, prompt: suggestionPrompt, icon: Icon }) => (
-                <button
-                  className={styles.suggestionCard}
-                  type="button"
-                  key={label}
-                  onClick={() => setPrompt(suggestionPrompt)}
-                  tabIndex={isDuplicate ? -1 : 0}
-                >
-                  <Icon size={19} strokeWidth={1.7} />
-                  <span>{label}</span>
-                </button>
-              ))}
-            </div>
-          ))}
+      {showSuggestions && (
+        <div className={styles.suggestionViewport} aria-label="Suggested prompts">
+          <div className={styles.suggestionTrack}>
+            {[false, true].map((isDuplicate) => (
+              <div
+                className={styles.suggestionGroup}
+                aria-hidden={isDuplicate || undefined}
+                key={isDuplicate ? "duplicate" : "primary"}
+              >
+                {suggestions.map(({ label, prompt: suggestionPrompt, icon: Icon }) => (
+                  <button
+                    className={styles.suggestionCard}
+                    type="button"
+                    key={label}
+                    onClick={() => setPrompt(suggestionPrompt)}
+                    tabIndex={isDuplicate ? -1 : 0}
+                  >
+                    <Icon size={19} strokeWidth={1.7} />
+                    <span>{label}</span>
+                  </button>
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -399,9 +434,21 @@ function AmbientBackground() {
 
 export function CopilotHome() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(true);
   const [mobileInspectorOpen, setMobileInspectorOpen] = useState(false);
+  const [chatEntries, setChatEntries] = useState<ChatEntry[]>([]);
+
+  function addChatEntry(prompt: string) {
+    setChatEntries((entries) => [
+      ...entries,
+      {
+        id: `message-${Date.now()}-${entries.length + 1}`,
+        prompt,
+        sentAt: new Date().toISOString(),
+      },
+    ]);
+  }
 
   function openMobileNavigation() {
     setMobileInspectorOpen(false);
@@ -445,14 +492,29 @@ export function CopilotHome() {
         <Topbar onOpenMenu={openMobileNavigation} onOpenInspector={openMobileInspector} />
 
         <div className={styles.contentLayout}>
-          <section className={styles.hero} aria-labelledby="home-heading">
-            <div className={styles.heroCopy}>
-              <BrandMark />
-              <h1 id="home-heading">Build, deploy, and debug with <span>Liara.</span></h1>
-              <p>Grounded answers from official Liara documentation.</p>
-            </div>
-            <PromptComposer />
-          </section>
+          {chatEntries.length === 0 ? (
+            <section className={styles.hero} aria-labelledby="home-heading">
+              <div className={styles.heroCopy}>
+                <BrandMark />
+                <h1 id="home-heading">Build, deploy, and debug with <span>Liara</span></h1>
+                <p>Your AI copilot for modern development.</p>
+                <HeroBenefits />
+              </div>
+              <PromptComposer onSubmitPrompt={addChatEntry} />
+            </section>
+          ) : (
+            <ChatWorkspace
+              entries={chatEntries}
+              onSuggestedPrompt={addChatEntry}
+              composer={(
+                <PromptComposer
+                  mode="chat"
+                  showSuggestions={false}
+                  onSubmitPrompt={addChatEntry}
+                />
+              )}
+            />
+          )}
 
           <div className={`${styles.rightRailDock} ${mobileInspectorOpen ? styles.rightRailDockMobileOpen : ""}`}>
             <button
@@ -463,12 +525,10 @@ export function CopilotHome() {
               aria-label={rightPanelCollapsed ? "Expand session inspector" : "Collapse session inspector"}
               title={rightPanelCollapsed ? "Expand inspector" : "Collapse inspector"}
             >
-              {mobileInspectorOpen ? (
-                <ChevronRight size={18} />
-              ) : rightPanelCollapsed ? (
-                <PanelRightOpen size={18} />
+              {mobileInspectorOpen || !rightPanelCollapsed ? (
+                <ChevronRight size={18} strokeWidth={1.8} />
               ) : (
-                <PanelRightClose size={18} />
+                <ChevronLeft size={18} strokeWidth={1.8} />
               )}
             </button>
             <aside className={styles.rightRail} aria-label="Copilot details">
