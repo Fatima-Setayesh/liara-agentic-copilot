@@ -1,13 +1,14 @@
-# AI Response + Streaming States Design QA
+# AI Response + Streaming + Sources Design QA
 
 - Previous response-design source: `C:\Users\omidi\Pictures\Screenshots\Screenshot 2026-08-20 185125.png`
 - Streaming/loading source: user-supplied Task 4 reference image in the conversation (displayed at 2048 × 1827; no filesystem path exposed to the workspace)
+- Sources/citation source: user-supplied Sources / Citation Experience reference image in the conversation (displayed at 2048 × 1827; no filesystem path exposed to the workspace)
 - Implementation target: `src/features/chat/` response, loading, activity, and streaming components
 - Protected baseline: homepage, ambient motion, header, sidebars, right panels, prompt composer, conversation layout, and completed response design
 - Intended viewports: desktop, tablet, and mobile
 - Implementation screenshot path: unavailable
 - Implementation pixels / CSS viewport / density: unavailable because no configured in-app browser surface is connected
-- States: empty homepage, pre-token loading, activity transitions, progressive response streaming, and completed response
+- States: empty homepage, pre-token loading, activity transitions, progressive response streaming, completed response, collapsed sources, expanded source details, and analyzed files
 
 ## Full-view comparison evidence
 
@@ -15,12 +16,12 @@ Blocked. The source references were inspected, but the in-app browser runtime re
 
 ## Focused region comparison evidence
 
-Blocked. Focused comparisons of the premium loader, activity timeline, streaming cursor, code reveal, responsive stacking, and completed response require browser-rendered screenshots.
+Blocked. Focused comparisons of the premium loader, activity timeline, streaming cursor, code reveal, completed response, compact source cards, expanded source details, analyzed files, and responsive stacking require browser-rendered screenshots.
 
 ## Findings
 
 - [P2] Rendered visual verification is unavailable.
-  - Location: loading and post-submit conversation states at all required breakpoints.
+  - Location: loading, post-submit conversation, and Sources / Citation states at all required breakpoints.
   - Evidence: the production build and HTTP preview succeed, but the in-app browser returned no available instance.
   - Impact: animation timing, optical alignment, viewport density, internal scrolling, responsive wrapping, hover states, and exact reference fidelity cannot be certified.
   - Fix: connect an available in-app browser, capture the required states, and compare them with the sources in shared visual inputs.
@@ -28,6 +29,7 @@ Blocked. Focused comparisons of the premium loader, activity timeline, streaming
 ## Open questions
 
 - The repository still has no grounded chat route. The local presentation demonstrates the response lifecycle with safe placeholder copy; contract-backed stream events can replace this lifecycle without changing the new presentation components.
+- The protected citation contract accepts allowlisted official Liara sources only. External documentation is not rendered until an approved, validated contract path exists for it.
 
 ## Required fidelity surfaces
 
@@ -36,6 +38,7 @@ Blocked. Focused comparisons of the premium loader, activity timeline, streaming
 - Colors and visual tokens: only the existing dark glass, cyan, mint, border, and muted-gray language is used; browser comparison is blocked.
 - Image quality and asset fidelity: the existing `/liara-logo.png` and installed Lucide icon set are reused; no replacement or generated placeholder assets were introduced.
 - Copy and content: activity labels are high-level user-facing states only; hidden reasoning and chain-of-thought are not rendered.
+- Sources and grounding: source titles, URLs, sections, paths, and snippets are rendered only from supplied citation or project-evidence data; the zero-source state does not invent trust claims.
 
 ## Protected UI verification
 
@@ -43,6 +46,7 @@ Blocked. Focused comparisons of the premium loader, activity timeline, streaming
 - Empty-state, header, sidebar, right-panel, background, composer, and conversation markup are unchanged.
 - `src/features/home/copilot-home.tsx` changes are limited to replacing the previous append-only message helper with the isolated streaming lifecycle hook.
 - The completed response still uses the existing `AiResponseCard`, section, status, code, interaction, and recommended-action design.
+- Sources are appended after completed response actions; no homepage, shell, conversation, response, streaming, or loading stylesheet was visually changed for this task.
 - Initial server-rendered HTML returns HTTP 200 and contains the existing homepage heading.
 
 ## Interaction checks
@@ -55,12 +59,15 @@ Blocked. Focused comparisons of the premium loader, activity timeline, streaming
 - Desktop, tablet, and mobile layouts are covered by the existing response breakpoints and new matching loader breakpoints.
 - All new animation has a reduced-motion fallback.
 - Browser click testing, focus inspection, console inspection, and screenshot comparison remain blocked.
+- Sources show a count, compact selectable cards, official/project trust labels, an inert accessible collapsed state, selected detail panels, documentation actions, and analyzed-file paths.
+- Grounding badges appear only when corresponding official citations, project context, or configuration analysis data is explicitly supplied.
+- The zero-source state stays compact and explicitly states that no verified grounding data was attached.
 
 ## Validation
 
 - ESLint passed with zero warnings.
 - TypeScript strict-mode typecheck passed.
-- Vitest passed: 3 files, 13 tests, including loading-before-first-token and progressive-section coverage.
+- Vitest passed: 4 files, 17 tests, including loading-before-first-token, progressive-section, verified citation, project evidence, and no-fabrication coverage.
 - Next.js production build passed.
 - HTTP preview returned 200 and contained the existing homepage heading.
 - `git diff --check` passed.
@@ -69,6 +76,7 @@ Blocked. Focused comparisons of the premium loader, activity timeline, streaming
 
 - Previous response-design pass: structured response sections, workflow rail, code block, interactions, and recommended actions were implemented while preserving the shell.
 - Streaming/loading pass: additive loader, activity timeline, progressive text, cursor, code reveal, responsive rules, and reduced-motion handling were added around the existing completed response.
+- Sources/citation pass: additive source cards, expand/collapse, selected documentation/project details, analyzed files, and grounding badges were appended after completed responses.
 - Rendered comparison: blocked because no browser surface is connected; no pixel-level visual pass is claimed.
 
 ## Implementation checklist
@@ -76,6 +84,7 @@ Blocked. Focused comparisons of the premium loader, activity timeline, streaming
 - Connect an available in-app browser.
 - Capture loading, mid-stream, and completed states at desktop width.
 - Capture loading and completed states at tablet and mobile widths.
+- Capture collapsed, expanded documentation, expanded project-context, and zero-source states at desktop and mobile widths.
 - Inspect overflow, primary interactions, focus behavior, reduced motion, and console output.
 - Compare full views and focused response regions, then resolve any visible P0/P1/P2 mismatch.
 

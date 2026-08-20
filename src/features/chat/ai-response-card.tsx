@@ -2,10 +2,8 @@
 
 import Image from "next/image";
 import {
-  BookOpen,
   Check,
   Copy,
-  ExternalLink,
   Lightbulb,
   SearchCheck,
   ShieldAlert,
@@ -29,6 +27,8 @@ import { LoadingState } from "./loading-state";
 import { ProfessionalCodeBlock } from "./professional-code-block";
 import { RecommendedActions } from "./recommended-actions";
 import { ResponseSection } from "./response-section";
+import type { ProjectEvidence } from "./source-experience-model";
+import { SourcesSection } from "./sources-section";
 import { StreamingMessage } from "./streaming-message";
 import type { ResponseLifecycle } from "./streaming-types";
 import streamingStyles from "./streaming-states.module.css";
@@ -43,6 +43,7 @@ type ResponseCardProps = {
   onSuggestedPrompt: (prompt: string) => void;
   onFeedback?: (feedback: Feedback) => void;
   lifecycle?: ResponseLifecycle;
+  projectEvidence?: ProjectEvidence;
 };
 
 type Feedback = "helpful" | "not-helpful" | null;
@@ -52,32 +53,6 @@ function formatTimestamp(timestamp: string) {
     hour: "numeric",
     minute: "2-digit",
   }).format(new Date(timestamp));
-}
-
-function SourcesPanel({ citations, headingId }: { citations: Citation[]; headingId: string }) {
-  if (citations.length === 0) return null;
-
-  return (
-    <section className={styles.sourcesPanel} aria-labelledby={headingId}>
-      <header>
-        <BookOpen size={16} aria-hidden="true" />
-        <h3 id={headingId}>Official sources</h3>
-        <span>{citations.length}</span>
-      </header>
-      <div className={styles.sourceGrid}>
-        {citations.map((citation) => (
-          <a href={citation.source.url} target="_blank" rel="noreferrer" key={citation.id}>
-            <span className={styles.sourceIndex}>{citation.displayIndex}</span>
-            <span className={styles.sourceCopy}>
-              <strong>{citation.source.title}</strong>
-              <small>{citation.source.sectionHeading ?? citation.source.documentationPath ?? "Liara documentation"}</small>
-            </span>
-            <ExternalLink size={14} aria-hidden="true" />
-          </a>
-        ))}
-      </div>
-    </section>
-  );
 }
 
 export function AiResponseCard({
@@ -90,9 +65,9 @@ export function AiResponseCard({
   onSuggestedPrompt,
   onFeedback,
   lifecycle,
+  projectEvidence,
 }: ResponseCardProps) {
   const agentStatusId = useId();
-  const sourcesId = useId();
   const [copied, setCopied] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>(null);
   const response = presentation ?? createPendingPresentation(prompt);
@@ -102,7 +77,6 @@ export function AiResponseCard({
   const showDiagnostics = !isStreaming || streamProgress >= .24;
   const showRecommendation = !isStreaming || streamProgress >= .63;
   const showCode = !isStreaming || streamProgress >= .84;
-  const showSources = !isStreaming || streamProgress >= .96;
   const responseReady = !lifecycle || lifecycle.phase === "complete";
 
   async function copyResponse() {
@@ -183,7 +157,6 @@ export function AiResponseCard({
               )}
             </ResponseSection>}
 
-            {showSources && <SourcesPanel citations={citations} headingId={sourcesId} />}
             {isStreaming && (
               <span className={streamingStyles.streamingStatus} role="status">
                 Liara is generating the response.
@@ -222,6 +195,10 @@ export function AiResponseCard({
             {copied ? "Response copied" : feedback === "helpful" ? "Marked helpful" : feedback === "not-helpful" ? "Feedback noted" : ""}
           </span>
         </div>}
+
+        {responseReady && (
+          <SourcesSection citations={citations} projectEvidence={projectEvidence} />
+        )}
 
         {responseReady && <RecommendedActions
           suggestions={suggestions}

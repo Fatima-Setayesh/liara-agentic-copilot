@@ -6,6 +6,7 @@ import type { AgentState, Citation, Suggestion } from "@/contracts";
 
 import { AiResponseCard } from "./ai-response-card";
 import type { AiResponsePresentation } from "./ai-response-model";
+import type { ProjectEvidence } from "./source-experience-model";
 import type { ResponseLifecycle } from "./streaming-types";
 import styles from "./chat-workspace.module.css";
 
@@ -18,6 +19,7 @@ export type ChatEntry = {
   citations?: Citation[];
   suggestions?: Suggestion[];
   lifecycle?: ResponseLifecycle;
+  projectEvidence?: ProjectEvidence;
 };
 
 type ChatWorkspaceProps = {
@@ -83,6 +85,7 @@ export function ChatWorkspace({ entries, composer, citations = [], onSuggestedPr
                 citations={entry.citations ?? (index === entries.length - 1 ? citations : [])}
                 suggestions={entry.suggestions}
                 lifecycle={entry.lifecycle}
+                projectEvidence={entry.projectEvidence}
                 onSuggestedPrompt={onSuggestedPrompt}
               />
             </div>
