@@ -48,6 +48,7 @@ export function useStreamingConversation() {
         progress: 0,
         activeStep: 0,
       },
+      transportMode: "preview",
     };
 
     setChatEntries((entries) => [...entries, entry]);
@@ -103,7 +104,18 @@ export function useStreamingConversation() {
     setChatEntries([]);
   }, [clearScheduledWork]);
 
+  const cancelGeneration = useCallback(() => {
+    clearScheduledWork();
+    setChatEntries((entries) => entries.map((entry, index) => (
+      index === entries.length - 1 && entry.lifecycle?.phase !== "complete"
+        ? { ...entry, agentState: undefined, cancelled: true, lifecycle: { phase: "complete", progress: 1, activeStep: entry.lifecycle?.activeStep ?? 0 } }
+        : entry
+    )));
+  }, [clearScheduledWork]);
+
   useEffect(() => () => clearScheduledWork(), [clearScheduledWork]);
 
-  return { chatEntries, addChatEntry, resetConversation };
+  const busy = chatEntries.at(-1)?.lifecycle?.phase === "loading" || chatEntries.at(-1)?.lifecycle?.phase === "streaming";
+
+  return { chatEntries, addChatEntry, cancelGeneration, resetConversation, busy };
 }

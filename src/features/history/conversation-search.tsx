@@ -21,9 +21,7 @@ export function ConversationSearch({ value, onChange }: ConversationSearchProps)
         <button type="button" onClick={() => onChange("")} aria-label="Clear conversation search">
           <X size={13} aria-hidden="true" />
         </button>
-      ) : (
-        <kbd aria-hidden="true">⌘K</kbd>
-      )}
+      ) : null}
     </div>
   );
 }

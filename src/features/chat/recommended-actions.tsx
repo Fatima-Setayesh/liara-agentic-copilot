@@ -11,6 +11,7 @@ type RecommendedActionsProps = {
   suggestions: Suggestion[];
   onSuggestedPrompt: (prompt: string) => void;
   onRetry: () => void;
+  allowFallback?: boolean;
 };
 
 const fallbackActions = [
@@ -26,7 +27,7 @@ const fallbackActions = [
   },
 ] as const;
 
-export function RecommendedActions({ suggestions, onSuggestedPrompt, onRetry }: RecommendedActionsProps) {
+export function RecommendedActions({ suggestions, onSuggestedPrompt, onRetry, allowFallback = true }: RecommendedActionsProps) {
   const headingId = useId();
   const [status, setStatus] = useState("");
   const promptActions = suggestions.length > 0
@@ -35,7 +36,7 @@ export function RecommendedActions({ suggestions, onSuggestedPrompt, onRetry }: 
         prompt: suggestion.prompt,
         icon: Sparkles,
       }))
-    : fallbackActions;
+    : allowFallback ? fallbackActions : [];
 
   function runPromptAction(label: string, prompt: string) {
     setStatus(`${label} sent to the conversation.`);

@@ -2,7 +2,7 @@
 
 import { ReactNode, useEffect, useRef } from "react";
 
-import type { AgentState, Citation, Suggestion } from "@/contracts";
+import type { AgentState, ChatError, Citation, Suggestion } from "@/contracts";
 
 import { AiResponseCard } from "./ai-response-card";
 import type { AiResponsePresentation } from "./ai-response-model";
@@ -20,6 +20,10 @@ export type ChatEntry = {
   suggestions?: Suggestion[];
   lifecycle?: ResponseLifecycle;
   projectEvidence?: ProjectEvidence;
+  liveText?: string;
+  error?: ChatError;
+  cancelled?: boolean;
+  transportMode?: "preview" | "live";
 };
 
 type ChatWorkspaceProps = {
@@ -27,6 +31,7 @@ type ChatWorkspaceProps = {
   composer: ReactNode;
   citations?: Citation[];
   onSuggestedPrompt: (prompt: string) => void;
+  onRetryEntry: (entryId: string) => void;
 };
 
 function formatTimestamp(timestamp: string) {
@@ -50,7 +55,7 @@ function UserMessage({ entry }: { entry: ChatEntry }) {
   );
 }
 
-export function ChatWorkspace({ entries, composer, citations = [], onSuggestedPrompt }: ChatWorkspaceProps) {
+export function ChatWorkspace({ entries, composer, citations = [], onSuggestedPrompt, onRetryEntry }: ChatWorkspaceProps) {
   const streamRef = useRef<HTMLDivElement>(null);
   const latestLifecycle = entries.at(-1)?.lifecycle;
 
@@ -86,6 +91,11 @@ export function ChatWorkspace({ entries, composer, citations = [], onSuggestedPr
                 suggestions={entry.suggestions}
                 lifecycle={entry.lifecycle}
                 projectEvidence={entry.projectEvidence}
+                liveText={entry.liveText}
+                error={entry.error}
+                cancelled={entry.cancelled}
+                transportMode={entry.transportMode}
+                onRetry={() => onRetryEntry(entry.id)}
                 onSuggestedPrompt={onSuggestedPrompt}
               />
             </div>

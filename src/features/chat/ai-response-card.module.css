@@ -101,6 +101,8 @@
 }
 
 .sectionContent > p { margin: 0; }
+.liveAnswer { min-width: 0; }
+.liveAnswer > span:last-child { margin-left: 3px; }
 
 .codeBlock {
   margin-top: 15px;

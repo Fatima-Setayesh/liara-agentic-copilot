@@ -1,7 +1,7 @@
 "use client";
 
 import { Archive, ArchiveRestore, MoreHorizontal, Pencil, Pin, PinOff, Trash2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 import type { ConversationRecord } from "./conversation-history-model";
 import styles from "./conversation-history.module.css";
@@ -22,6 +22,8 @@ export function ConversationActions({
   onTogglePin,
 }: ConversationActionsProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const menuId = useId();
   const [open, setOpen] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
@@ -50,6 +52,30 @@ export function ConversationActions({
     };
   }, [open]);
 
+  useEffect(() => {
+    if (!open) return;
+    const focusFrame = window.requestAnimationFrame(() => {
+      menuRef.current?.querySelector<HTMLButtonElement>('button[role="menuitem"]')?.focus();
+    });
+    return () => window.cancelAnimationFrame(focusFrame);
+  }, [open]);
+
+  function moveMenuFocus(event: React.KeyboardEvent<HTMLDivElement>) {
+    if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+    const items = Array.from(menuRef.current?.querySelectorAll<HTMLButtonElement>('button[role="menuitem"]') ?? []);
+    if (items.length === 0) return;
+    event.preventDefault();
+    const currentIndex = items.indexOf(document.activeElement as HTMLButtonElement);
+    const nextIndex = event.key === "Home"
+      ? 0
+      : event.key === "End"
+        ? items.length - 1
+        : event.key === "ArrowDown"
+          ? (currentIndex + 1 + items.length) % items.length
+          : (currentIndex - 1 + items.length) % items.length;
+    items[nextIndex].focus();
+  }
+
   function runAction(action: () => void) {
     action();
     setOpen(false);
@@ -65,12 +91,13 @@ export function ConversationActions({
         aria-label={`Actions for ${conversation.title}`}
         aria-haspopup="menu"
         aria-expanded={open}
+        aria-controls={open ? menuId : undefined}
       >
         <MoreHorizontal size={15} aria-hidden="true" />
       </button>
 
       {open && (
-        <div className={styles.conversationMenu} role="menu">
+        <div className={styles.conversationMenu} id={menuId} role="menu" ref={menuRef} onKeyDown={moveMenuFocus}>
           <button type="button" role="menuitem" onClick={() => runAction(onRename)}>
             <Pencil size={13} aria-hidden="true" /> Rename
           </button>

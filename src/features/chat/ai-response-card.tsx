@@ -5,6 +5,7 @@ import {
   Check,
   Copy,
   Lightbulb,
+  MessageSquareText,
   SearchCheck,
   ShieldAlert,
   ThumbsDown,
@@ -13,7 +14,7 @@ import {
 } from "lucide-react";
 import { useId, useState } from "react";
 
-import type { AgentState, Citation, Suggestion } from "@/contracts";
+import type { AgentState, ChatError, Citation, Suggestion } from "@/contracts";
 
 import { AgentStatus } from "./agent-status";
 import {
@@ -24,12 +25,15 @@ import {
 import styles from "./ai-response-card.module.css";
 import workspaceStyles from "./chat-workspace.module.css";
 import { LoadingState } from "./loading-state";
+import { MarkdownContent } from "./markdown-content";
 import { ProfessionalCodeBlock } from "./professional-code-block";
 import { RecommendedActions } from "./recommended-actions";
 import { ResponseSection } from "./response-section";
+import { ResponseCancelledState, ResponseErrorState } from "./response-request-state";
 import type { ProjectEvidence } from "./source-experience-model";
 import { SourcesSection } from "./sources-section";
 import { StreamingMessage } from "./streaming-message";
+import { TypingCursor } from "./typing-cursor";
 import type { ResponseLifecycle } from "./streaming-types";
 import streamingStyles from "./streaming-states.module.css";
 
@@ -44,6 +48,11 @@ type ResponseCardProps = {
   onFeedback?: (feedback: Feedback) => void;
   lifecycle?: ResponseLifecycle;
   projectEvidence?: ProjectEvidence;
+  liveText?: string;
+  error?: ChatError;
+  cancelled?: boolean;
+  onRetry?: () => void;
+  transportMode?: "preview" | "live";
 };
 
 type Feedback = "helpful" | "not-helpful" | null;
@@ -66,18 +75,24 @@ export function AiResponseCard({
   onFeedback,
   lifecycle,
   projectEvidence,
+  liveText,
+  error,
+  cancelled,
+  onRetry,
+  transportMode = "live",
 }: ResponseCardProps) {
   const agentStatusId = useId();
   const [copied, setCopied] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>(null);
   const response = presentation ?? createPendingPresentation(prompt);
+  const retryResponse = onRetry ?? (() => onSuggestedPrompt(prompt));
   const isLoading = lifecycle?.phase === "loading";
   const isStreaming = lifecycle?.phase === "streaming";
   const streamProgress = lifecycle?.progress ?? 1;
   const showDiagnostics = !isStreaming || streamProgress >= .24;
   const showRecommendation = !isStreaming || streamProgress >= .63;
   const showCode = !isStreaming || streamProgress >= .84;
-  const responseReady = !lifecycle || lifecycle.phase === "complete";
+  const responseReady = (!lifecycle || lifecycle.phase === "complete") && !error && !cancelled;
 
   async function copyResponse() {
     const sourceText = citations.length > 0
@@ -87,7 +102,7 @@ export function AiResponseCard({
       : "";
 
     try {
-      await navigator.clipboard.writeText(`${formatPresentationCopy(response)}${sourceText}`);
+      await navigator.clipboard.writeText(`${liveText ?? formatPresentationCopy(response)}${sourceText}`);
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1600);
     } catch {
@@ -114,8 +129,25 @@ export function AiResponseCard({
           <time dateTime={timestamp}>{formatTimestamp(timestamp)}</time>
         </header>
 
-        {isLoading ? (
-          <LoadingState activeStep={lifecycle.activeStep} />
+        {error ? (
+          <ResponseErrorState error={error} onRetry={retryResponse} />
+        ) : cancelled ? (
+          <ResponseCancelledState onRetry={retryResponse} />
+        ) : isLoading ? (
+          <LoadingState activeStep={lifecycle.activeStep} mode={transportMode} />
+        ) : liveText !== undefined ? (
+          <div className={`${styles.presentationGrid} ${isStreaming ? streamingStyles.streamingRegion : ""}`}>
+            <div className={styles.responseSurface}>
+              <ResponseSection title="Grounded answer" icon={MessageSquareText} tone="analysis" delay={40}>
+                <div className={styles.liveAnswer}>
+                  <MarkdownContent content={liveText} />
+                  <TypingCursor visible={isStreaming} />
+                </div>
+              </ResponseSection>
+              {isStreaming && <span className={streamingStyles.streamingStatus} role="status">Liara is generating the response.</span>}
+            </div>
+            <AgentStatus agentState={agentState} headingId={agentStatusId} />
+          </div>
         ) : (
         <div className={`${styles.presentationGrid} ${isStreaming ? streamingStyles.streamingRegion : ""}`}>
           <div className={styles.responseSurface}>
@@ -203,7 +235,8 @@ export function AiResponseCard({
         {responseReady && <RecommendedActions
           suggestions={suggestions}
           onSuggestedPrompt={onSuggestedPrompt}
-          onRetry={() => onSuggestedPrompt(prompt)}
+          onRetry={retryResponse}
+          allowFallback={liveText === undefined}
         />}
       </div>
     </article>

@@ -4,6 +4,7 @@ import styles from "./streaming-states.module.css";
 
 type AgentActivityTimelineProps = {
   activeStep: number;
+  mode?: "preview" | "live";
 };
 
 const activitySteps = [
@@ -25,8 +26,16 @@ const activitySteps = [
   },
 ] as const;
 
-export function AgentActivityTimeline({ activeStep }: AgentActivityTimelineProps) {
-  const currentStep = activitySteps[Math.min(activeStep, activitySteps.length - 1)];
+const previewSteps = [
+  { label: "Validating request input", detail: "Applying the frontend request boundary" },
+  { label: "Preparing interface preview", detail: "Using safe local presentation data" },
+  { label: "Checking grounding boundaries", detail: "Keeping sources empty without backend evidence" },
+  { label: "Rendering preview response", detail: "No external action is performed" },
+] as const;
+
+export function AgentActivityTimeline({ activeStep, mode = "live" }: AgentActivityTimelineProps) {
+  const steps = mode === "preview" ? previewSteps : activitySteps;
+  const currentStep = activeStep >= 0 ? steps[Math.min(activeStep, steps.length - 1)] : undefined;
 
   return (
     <aside className={styles.activityTimeline} aria-label="Liara activity" aria-live="polite">
@@ -36,12 +45,12 @@ export function AgentActivityTimeline({ activeStep }: AgentActivityTimelineProps
         </span>
         <span>
           <strong>Agent activity</strong>
-          <small>{activeStep >= activitySteps.length ? "Context ready" : currentStep.detail}</small>
+          <small>{activeStep < 0 ? "Waiting for a verified activity event" : activeStep >= steps.length ? "Context ready" : currentStep?.detail}</small>
         </span>
       </header>
 
       <ol className={styles.activityList}>
-        {activitySteps.map((step, index) => {
+        {steps.map((step, index) => {
           const state = index < activeStep ? "complete" : index === activeStep ? "active" : "pending";
 
           return (

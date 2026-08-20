@@ -1,0 +1,59 @@
+.requestState {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  margin-top: 6px;
+  padding: 18px;
+  border: 1px solid rgba(233, 131, 103, .25);
+  border-radius: 15px;
+  background:
+    radial-gradient(circle at 7% 20%, rgba(185, 77, 58, .13), transparent 26%),
+    linear-gradient(145deg, rgba(31, 17, 18, .94), rgba(12, 13, 16, .95));
+  box-shadow: 0 22px 56px rgba(0, 0, 0, .24), inset 0 1px rgba(255, 255, 255, .025);
+  animation: stateEnter 320ms cubic-bezier(.22, .8, .24, 1) both;
+}
+
+.requestState[data-tone="cancelled"] {
+  border-color: rgba(132, 174, 177, .2);
+  background:
+    radial-gradient(circle at 7% 20%, rgba(66, 125, 128, .1), transparent 26%),
+    linear-gradient(145deg, rgba(11, 25, 28, .94), rgba(6, 15, 18, .95));
+}
+
+.stateIcon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  color: #f0a18c;
+  border: 1px solid rgba(235, 134, 105, .27);
+  border-radius: 12px;
+  background: rgba(103, 40, 34, .28);
+  box-shadow: 0 0 18px rgba(219, 102, 77, .08);
+}
+.requestState[data-tone="cancelled"] .stateIcon { color: #8fc8c5; border-color: rgba(117, 184, 182, .23); background: rgba(37, 76, 78, .24); }
+.stateCopy { display: grid; min-width: 0; gap: 5px; }
+.stateEyebrow { display: inline-flex; align-items: center; gap: 5px; color: #df8e79; font-size: 9px; font-weight: 650; letter-spacing: .06em; text-transform: uppercase; }
+.requestState[data-tone="cancelled"] .stateEyebrow { color: #77bcb5; }
+.stateCopy h3 { margin: 0; color: #e8eeee; font-size: 13px; font-weight: 610; }
+.stateCopy p { margin: 0; color: #9aa7aa; font-size: 11px; line-height: 1.55; }
+.stateCopy small { color: #68787c; font-size: 9px; }
+.stateCopy code { color: #9cadad; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+.requestState > button { display: inline-flex; min-height: 40px; align-items: center; gap: 7px; padding: 0 12px; color: #f3c1b3; border: 1px solid rgba(232, 133, 107, .26); border-radius: 9px; background: rgba(83, 34, 30, .36); font: inherit; font-size: 10px; cursor: pointer; transition: transform 170ms ease, color 170ms ease, border-color 170ms ease, background 170ms ease; }
+.requestState[data-tone="cancelled"] > button { color: #a9d7d2; border-color: rgba(112, 192, 185, .22); background: rgba(24, 68, 67, .28); }
+.requestState > button:hover { transform: translateY(-1px); color: #fff; border-color: rgba(244, 165, 143, .44); background: rgba(109, 45, 38, .48); }
+
+@keyframes stateEnter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+@media (max-width: 720px) {
+  .requestState { grid-template-columns: 38px minmax(0, 1fr); padding: 15px; }
+  .stateIcon { width: 38px; height: 38px; }
+  .requestState > button { grid-column: 2; justify-self: start; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .requestState { animation: none; }
+  .requestState > button { transition-duration: .01ms; }
+}

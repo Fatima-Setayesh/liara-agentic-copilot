@@ -3,7 +3,7 @@ import { CircuitBoard, ScanSearch } from "lucide-react";
 
 import styles from "./streaming-states.module.css";
 
-export function ResponseSkeleton() {
+export function ResponseSkeleton({ mode = "live" }: { mode?: "preview" | "live" }) {
   return (
     <section className={styles.responseSkeleton} aria-label="Liara is preparing a response">
       <span className={styles.signalSweep} aria-hidden="true" />
@@ -12,8 +12,8 @@ export function ResponseSkeleton() {
           <Image src="/liara-logo.png" alt="" width={24} height={24} />
         </span>
         <span className={styles.skeletonHeading}>
-          <strong>Establishing response context</strong>
-          <small>Liara is assembling a grounded answer</small>
+          <strong>{mode === "preview" ? "Preparing interface preview" : "Establishing response context"}</strong>
+          <small>{mode === "preview" ? "No backend request or source claim is being made" : "Liara is awaiting verified stream activity"}</small>
         </span>
         <ScanSearch size={17} strokeWidth={1.7} aria-hidden="true" />
       </header>
@@ -37,7 +37,7 @@ export function ResponseSkeleton() {
 
       <footer className={styles.skeletonFooter}>
         <span className={styles.liveSignal} aria-hidden="true"><i /></span>
-        <span>Secure context channel active</span>
+        <span>{mode === "preview" ? "Local presentation preview" : "Secure context channel active"}</span>
       </footer>
     </section>
   );

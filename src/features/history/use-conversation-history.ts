@@ -57,7 +57,7 @@ export function useConversationHistory() {
           ? { ...conversation, updatedAt: timestamp, archived: false }
           : conversation
       )));
-      return;
+      return activeConversationId;
     }
 
     const id = `conversation-${crypto.randomUUID()}`;
@@ -71,6 +71,7 @@ export function useConversationHistory() {
 
     setConversations((items) => [conversation, ...items]);
     setActiveConversationId(id);
+    return id;
   }, [activeConversationId, conversations]);
 
   const selectConversation = useCallback((id: string) => {

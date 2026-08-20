@@ -32,17 +32,22 @@ import {
   ServerCog,
   Settings2,
   ShieldCheck,
+  Square,
   Sparkles,
   Target,
   type LucideIcon,
 } from "lucide-react";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ChatWorkspace } from "@/features/chat/chat-workspace";
-import { useStreamingConversation } from "@/features/chat/use-streaming-conversation";
+import { useLiaraConversation } from "@/features/chat/use-liara-conversation";
 import { ConversationHistory } from "@/features/history/conversation-history";
 import type { ConversationRecord } from "@/features/history/conversation-history-model";
 import { useConversationHistory } from "@/features/history/use-conversation-history";
+import { MAX_CHAT_MESSAGE_CHARACTERS, type UserContext } from "@/contracts";
+import type { ConnectionMode } from "@/features/settings/copilot-preferences-model";
+import { SettingsDialog } from "@/features/settings/settings-dialog";
+import { useCopilotPreferences } from "@/features/settings/use-copilot-preferences";
 
 import styles from "./copilot-home.module.css";
 
@@ -121,6 +126,7 @@ function Sidebar({
   onToggleArchiveConversation,
   onTogglePinConversation,
   onToggleCollapsed,
+  onOpenSettings,
 }: {
   collapsed: boolean;
   open: boolean;
@@ -135,6 +141,7 @@ function Sidebar({
   onToggleArchiveConversation: (id: string) => void;
   onTogglePinConversation: (id: string) => void;
   onToggleCollapsed: () => void;
+  onOpenSettings: () => void;
 }) {
   const [activeItem, setActiveItem] = useState("Chat");
 
@@ -223,7 +230,7 @@ function Sidebar({
         </section>
 
         <div className={styles.profileArea}>
-          <button type="button" className={styles.profileButton}>
+          <button type="button" className={styles.profileButton} onClick={onOpenSettings} aria-haspopup="dialog">
             <span className={styles.avatar}>L</span>
             <span className={styles.profileCopy}>
               <strong>Liara Developer</strong>
@@ -240,9 +247,15 @@ function Sidebar({
 function Topbar({
   onOpenInspector,
   onOpenMenu,
+  onOpenSettings,
+  connectionMode,
+  searchInputRef,
 }: {
   onOpenInspector: () => void;
   onOpenMenu: () => void;
+  onOpenSettings: () => void;
+  connectionMode: ConnectionMode;
+  searchInputRef: RefObject<HTMLInputElement | null>;
 }) {
   const [searchValue, setSearchValue] = useState("");
 
@@ -255,7 +268,7 @@ function Topbar({
         <span className={styles.statusDot} />
         <span>Official Liara Docs</span>
         <span className={styles.statusSeparator}>•</span>
-        <span>Connected</span>
+        <span>{connectionMode === "live" ? "Live API" : "Interface preview"}</span>
         <ChevronDown size={15} />
       </button>
 
@@ -263,6 +276,7 @@ function Topbar({
         <Command size={19} className={styles.commandIcon} />
         <input
           value={searchValue}
+          ref={searchInputRef}
           onChange={(event) => setSearchValue(event.target.value)}
           placeholder="Search or run a command..."
           aria-label="Search or run a command"
@@ -274,8 +288,8 @@ function Topbar({
         <button type="button" className={styles.iconButton} aria-label="Copilot updates"><Sparkles size={21} /></button>
         <button type="button" className={styles.iconButton} aria-label="Notifications"><Bell size={20} /></button>
         <button type="button" className={styles.iconButton} aria-label="Help"><CircleHelp size={20} /></button>
-        <button type="button" className={styles.topAvatar} aria-label="Open profile">L</button>
-        <button type="button" className={styles.profileChevron} aria-label="Profile menu"><ChevronDown size={17} /></button>
+        <button type="button" className={styles.topAvatar} onClick={onOpenSettings} aria-label="Open Copilot preferences" aria-haspopup="dialog">L</button>
+        <button type="button" className={styles.profileChevron} onClick={onOpenSettings} aria-label="Open Copilot preferences" aria-haspopup="dialog"><ChevronDown size={17} /></button>
       </div>
       <button
         className={styles.mobileInspector}
@@ -289,8 +303,13 @@ function Topbar({
   );
 }
 
-function ContextCard() {
-  const [answerDepth, setAnswerDepth] = useState("Detailed");
+function ContextCard({
+  userContext,
+  onUpdateUserContext,
+}: {
+  userContext: UserContext;
+  onUpdateUserContext: (patch: Partial<UserContext>) => void;
+}) {
 
   return (
     <section className={styles.glassCard} aria-labelledby="context-title">
@@ -299,17 +318,17 @@ function ContextCard() {
         <Info size={18} />
       </div>
       <dl className={styles.contextList}>
-        <div><dt>Framework</dt><dd>Not set</dd></div>
-        <div><dt>Runtime</dt><dd>Not set</dd></div>
-        <div><dt>Service</dt><dd>Not set</dd></div>
+        <div><dt>Framework</dt><dd>{userContext.framework ?? "Not set"}</dd></div>
+        <div><dt>Runtime</dt><dd>{userContext.runtime ?? "Not set"}</dd></div>
+        <div><dt>Service</dt><dd>{userContext.liaraService ?? "Not set"}</dd></div>
       </dl>
       <div className={styles.contextDivider} />
       <label className={styles.answerDepth}>
         <span>Answer depth</span>
-        <select value={answerDepth} onChange={(event) => setAnswerDepth(event.target.value)}>
-          <option>Concise</option>
-          <option>Balanced</option>
-          <option>Detailed</option>
+        <select value={userContext.answerDepth ?? "balanced"} onChange={(event) => onUpdateUserContext({ answerDepth: event.target.value as UserContext["answerDepth"] })}>
+          <option value="concise">Concise</option>
+          <option value="balanced">Balanced</option>
+          <option value="detailed">Detailed</option>
         </select>
         <ChevronDown size={15} aria-hidden="true" />
       </label>
@@ -352,10 +371,18 @@ function PromptComposer({
   mode = "empty",
   onSubmitPrompt,
   showSuggestions = true,
+  busy = false,
+  sendOnEnter = true,
+  onCancel,
+  textareaRef,
 }: {
   mode?: "empty" | "chat";
   onSubmitPrompt?: (prompt: string) => void;
   showSuggestions?: boolean;
+  busy?: boolean;
+  sendOnEnter?: boolean;
+  onCancel?: () => void;
+  textareaRef?: RefObject<HTMLTextAreaElement | null>;
 }) {
   const [prompt, setPrompt] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -364,7 +391,7 @@ function PromptComposer({
 
   function submitPrompt(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!canSubmit) return;
+    if (!canSubmit || busy) return;
     const nextPrompt = prompt.trim();
     setSubmitted(true);
     onSubmitPrompt?.(nextPrompt);
@@ -378,15 +405,20 @@ function PromptComposer({
         <div className={styles.promptInner}>
           <textarea
             value={prompt}
+            ref={textareaRef}
             onChange={(event) => setPrompt(event.target.value)}
             onKeyDown={(event) => {
-              if (event.key === "Enter" && !event.shiftKey) {
+              const shouldSend = event.key === "Enter" && (
+                (sendOnEnter && !event.shiftKey) || (!sendOnEnter && (event.metaKey || event.ctrlKey))
+              );
+              if (shouldSend && !busy) {
                 event.preventDefault();
                 event.currentTarget.form?.requestSubmit();
               }
             }}
             placeholder="Ask about deployment, databases, domains, errors, or Liara services..."
             aria-label="Ask Liara Copilot"
+            maxLength={MAX_CHAT_MESSAGE_CHARACTERS}
             rows={3}
           />
           <div className={styles.composerActions}>
@@ -395,9 +427,15 @@ function PromptComposer({
               <button type="button" aria-label="Add code snippet"><Code2 size={20} /></button>
             </div>
             <div className={styles.sendGroup}>
-              <span>{submitted ? "Ready for your conversation" : "Enter to send"}</span>
-              <button type="submit" className={styles.sendButton} disabled={!canSubmit} aria-label="Send prompt">
-                {submitted ? <Check size={21} /> : <ArrowUp size={22} />}
+              <span>{busy ? "Generating — stop anytime" : submitted ? "Ready for your conversation" : sendOnEnter ? "Enter to send" : "Ctrl + Enter to send"}</span>
+              <button
+                type={busy ? "button" : "submit"}
+                className={styles.sendButton}
+                disabled={!busy && !canSubmit}
+                onClick={busy ? onCancel : undefined}
+                aria-label={busy ? "Stop generation" : "Send prompt"}
+              >
+                {busy ? <Square size={16} fill="currentColor" /> : submitted ? <Check size={21} /> : <ArrowUp size={22} />}
               </button>
             </div>
           </div>
@@ -451,12 +489,27 @@ export function CopilotHome() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [rightPanelCollapsed, setRightPanelCollapsed] = useState(true);
   const [mobileInspectorOpen, setMobileInspectorOpen] = useState(false);
-  const { chatEntries, addChatEntry, resetConversation } = useStreamingConversation();
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const composerRef = useRef<HTMLTextAreaElement>(null);
+  const copilotPreferences = useCopilotPreferences();
+  const {
+    chatEntries,
+    busy,
+    addChatEntry,
+    retryEntry,
+    cancelGeneration,
+    resetConversation,
+  } = useLiaraConversation({
+    mode: copilotPreferences.preferences.connectionMode,
+    userContext: copilotPreferences.preferences.userContext,
+  });
   const conversationHistory = useConversationHistory();
+  const closeSettings = useCallback(() => setSettingsOpen(false), []);
 
   function submitPrompt(prompt: string) {
-    conversationHistory.registerPrompt(prompt);
-    addChatEntry(prompt);
+    const conversationId = conversationHistory.registerPrompt(prompt);
+    addChatEntry(prompt, conversationId);
   }
 
   function startNewConversation() {
@@ -485,6 +538,43 @@ export function CopilotHome() {
     setSidebarCollapsed(false);
     setSidebarOpen(true);
   }
+
+  function openSettings() {
+    setSidebarOpen(false);
+    setMobileInspectorOpen(false);
+    setSettingsOpen(true);
+  }
+
+  function changeConnectionMode(mode: ConnectionMode) {
+    resetConversation();
+    conversationHistory.startNewConversation();
+    copilotPreferences.setConnectionMode(mode);
+  }
+
+  useEffect(() => {
+    function handleKeyboardShortcut(event: KeyboardEvent) {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+        return;
+      }
+
+      const target = event.target as HTMLElement | null;
+      const editing = target?.matches("input, textarea, select, [contenteditable='true']");
+      if (event.key === "/" && !editing && !settingsOpen) {
+        event.preventDefault();
+        composerRef.current?.focus();
+      }
+
+      if (event.key === "Escape" && !settingsOpen) {
+        setSidebarOpen(false);
+        setMobileInspectorOpen(false);
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyboardShortcut);
+    return () => document.removeEventListener("keydown", handleKeyboardShortcut);
+  }, [settingsOpen]);
 
   function openMobileInspector() {
     setSidebarOpen(false);
@@ -519,6 +609,7 @@ export function CopilotHome() {
         onToggleArchiveConversation={toggleArchiveConversation}
         onTogglePinConversation={conversationHistory.togglePinned}
         onToggleCollapsed={() => setSidebarCollapsed((collapsed) => !collapsed)}
+        onOpenSettings={openSettings}
       />
       <button
         className={`${styles.rightDrawerBackdrop} ${mobileInspectorOpen ? styles.rightDrawerBackdropVisible : ""}`}
@@ -528,7 +619,13 @@ export function CopilotHome() {
       />
       <section className={styles.workspace}>
         <AmbientBackground />
-        <Topbar onOpenMenu={openMobileNavigation} onOpenInspector={openMobileInspector} />
+        <Topbar
+          onOpenMenu={openMobileNavigation}
+          onOpenInspector={openMobileInspector}
+          onOpenSettings={openSettings}
+          connectionMode={copilotPreferences.preferences.connectionMode}
+          searchInputRef={searchInputRef}
+        />
 
         <div className={styles.contentLayout}>
           {chatEntries.length === 0 ? (
@@ -539,17 +636,28 @@ export function CopilotHome() {
                 <p>Your AI copilot for modern development.</p>
                 <HeroBenefits />
               </div>
-              <PromptComposer onSubmitPrompt={submitPrompt} />
+              <PromptComposer
+                onSubmitPrompt={submitPrompt}
+                busy={busy}
+                onCancel={cancelGeneration}
+                sendOnEnter={copilotPreferences.preferences.sendOnEnter}
+                textareaRef={composerRef}
+              />
             </section>
           ) : (
             <ChatWorkspace
               entries={chatEntries}
               onSuggestedPrompt={submitPrompt}
+              onRetryEntry={retryEntry}
               composer={(
                 <PromptComposer
                   mode="chat"
                   showSuggestions={false}
                   onSubmitPrompt={submitPrompt}
+                  busy={busy}
+                  onCancel={cancelGeneration}
+                  sendOnEnter={copilotPreferences.preferences.sendOnEnter}
+                  textareaRef={composerRef}
                 />
               )}
             />
@@ -571,7 +679,10 @@ export function CopilotHome() {
               )}
             </button>
             <aside className={styles.rightRail} aria-label="Copilot details">
-              <ContextCard />
+              <ContextCard
+                userContext={copilotPreferences.preferences.userContext}
+                onUpdateUserContext={copilotPreferences.updateUserContext}
+              />
               <BenefitsCard />
             </aside>
           </div>
@@ -583,6 +694,15 @@ export function CopilotHome() {
           <span><i /> All systems operational</span>
         </footer>
       </section>
+      <SettingsDialog
+        open={settingsOpen}
+        preferences={copilotPreferences.preferences}
+        onClose={closeSettings}
+        onUpdateUserContext={copilotPreferences.updateUserContext}
+        onConnectionModeChange={changeConnectionMode}
+        onSendOnEnterChange={copilotPreferences.setSendOnEnter}
+        onReset={copilotPreferences.resetPreferences}
+      />
     </main>
   );
 }
