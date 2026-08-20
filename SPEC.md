@@ -128,22 +128,96 @@ Useful optional context includes framework, runtime, Liara service, project desc
 
 Conversation architecture must support bounded history, relevance filtering, summarization, and token budgets. It must not resend unlimited history indefinitely. Users must eventually be able to understand or reset retained preferences.
 
-## 10. UI and UX requirements
+## 10. Frontend, UI, and UX requirements
 
-The frontend owner defines the visual implementation on the Next.js, React, and Tailwind CSS foundation. shadcn/ui and AI Elements are optional accelerators, not acceptance criteria or architectural dependencies. The final experience must include:
+UI and User Experience is a mandatory **55-point** judging category. The requirements below define product behavior and acceptance considerations, not a visual theme. They are classified as follows:
 
-- responsive, accessible desktop and mobile chat
-- clear source and citation presentation
-- readable code and commands
-- real streaming, loading, cancellation, retry, empty, and error states
-- conversation navigation and continuation
-- suggested next actions
-- visible but honest agent activity
-- personalization controls
-- keyboard and focus behavior
-- appropriate Persian/RTL support if included in the chosen language experience
+- **Mandatory product requirements:** the visible capabilities, quality boundaries, and validation expectations in this section
+- **Implementation guidance:** the approved stack and optional accelerators, which are not judging requirements themselves
+- **Frontend-owned design decisions:** visual identity and component appearance intentionally left open
 
-The frontend consumes typed message parts; it must not parse arbitrary backend strings for sources, suggestions, status, or errors. The current page is intentionally only a scaffold.
+Unless supported by implementation and acceptance evidence, each capability below remains a requirement or plan rather than an implemented or verified feature. The current page is only a scaffold.
+
+### 10.1 Frontend responsibility and shared boundary
+
+Fatima owns the complete visible product experience: frontend implementation and API integration; UI and UX; desktop, mobile, and responsive behavior; chat and conversation flows; AI and technical-answer presentation; citations, code blocks, links, and technical information; loading, streaming, empty, error, retry, and cancellation states; continuation, suggestions, agent activity, personalization, and presentational settings; accessibility, keyboard and focus behavior; useful micro-interactions, animation, visual polish, and frontend testing.
+
+The frontend consumes protected shared contracts rather than duplicating backend business logic. The backend/platform owner remains responsible for retrieval, AI orchestration, persistence, source correctness, security architecture, monitoring, and deployment architecture. The frontend must never invent a conversation fact, personalization value, source, citation, agent activity, error category, or completion outcome. Contract changes require coordinated frontend/backend work and integration validation.
+
+### 10.2 Judged conversation and interaction experience
+
+The product must not be a `textarea + send button + plain response` chatbot. It must provide a polished technical-assistant experience that accounts for:
+
+- a clear user/assistant distinction, information hierarchy, and consistent spacing and presentation
+- natural follow-up conversation, previous-message context presentation, message ordering, and contextual continuation
+- backend-provided conversation IDs and state; a new-conversation flow; and, if persistence is implemented, history, reopening, and deletion confirmation
+- streamed responses, generation/loading indication, stop/cancel, retry, and regeneration where the approved operation supports it
+- copy-answer and copy-code actions with useful confirmation feedback
+- structured clarification, follow-up suggestions, and honest agent activity or progress
+- useful empty, loading, safe error, disabled, and retry states
+- stable streaming and scrolling, preservation of reading position, and a scroll-to-bottom interaction where useful
+
+Frontend conversation state must remain consistent with the backend rather than independently reconstructing server decisions.
+
+### 10.3 Technical-content rendering
+
+Developer answers must present Markdown, headings, paragraphs, ordered and unordered lists, inline code, fenced code blocks, shell commands, tables, links, warnings, notes, step-by-step instructions, citations, and source references correctly. Code and commands must be readable, visually distinguishable from prose, easy to copy, and usable on desktop and mobile. Long URLs, code blocks, and technical tables must wrap or overflow safely without breaking the page. The specification does not choose syntax-highlighting colors or a code theme.
+
+Technical and Markdown content must be rendered safely. Links and commands must remain understandable, and the frontend must not add authority or evidence cues that were not supplied by backend contract data.
+
+### 10.4 Sources and citations
+
+The backend is authoritative for citation correctness and supplies all source data through the shared contract. The frontend must present that data professionally and traceably without fabricating or completing missing fields.
+
+Valid implementation options include citation markers or badges, source cards, a source list, drawer or sheet, and source previews showing the title, relevant section, official URL, and optional snippet or metadata when provided. These are flexible UI patterns, not a required component design. Citations and links must remain usable after streaming completes and on mobile.
+
+### 10.5 Agentic flows, suggestions, and personalization
+
+The UI must represent only backend-provided product activity. Contract v1 distinguishes transient activities (`understanding`, `clarification_required`, `retrieving`, `generating`) from terminal outcomes (`completed`, `cancelled`, `failed`). A completed outcome carries `evidenceStatus` (`sufficient`, `partial`, or `none`); `none` must appear as an honest completed no-evidence response rather than a retrieval or application failure. The UI must never expose hidden chain-of-thought or show fake thinking, reasoning, searching, or progress that does not correspond to a real operation.
+
+The experience must support clarification questions, selectable clarification options where useful, bounded multi-step workflows, continuation after clarification, cancellation, and structured next actions. Contract suggestions contain an ID, label, and `prompt` value; the frontend must render them as usable interactions without the specification mandating chips, buttons, cards, or another exact form.
+
+Personalization controls may expose only fields supported by the shared contract, currently including framework, runtime, Liara service, project description, experience level, answer depth, and preferred language. Frontend-only presentational preferences may be offered without pretending they change backend personalization. A response-style preference or any other server-consumed field requires an approved contract evolution; the frontend must not invent backend profile state.
+
+### 10.6 Streaming and error UX
+
+The frontend must follow the approved shared streaming contract in Section 16 and must not invent another protocol. It must handle streamed text, source and suggestion delivery, real activity, completion, failure, cancellation, connection interruption, stable scrolling, and generation-stop behavior.
+
+Safe UX must map typed backend categories for invalid input, rate limiting, timeout, retrieval failure, provider/model unavailability, stream interruption, and internal failure. It must use contract fields such as retryability and show an actionable explanation, retry or disabled state where appropriate. Retry timing is displayed only if a future approved contract supplies it. Deliberate user cancellation is not presented as an application error, and raw stack traces or arbitrary provider messages must never be displayed.
+
+### 10.7 Responsive design, accessibility, and polish
+
+Responsive behavior must be intentional for desktop, mobile, and relevant intermediate/tablet widths; mobile cannot be treated as a final CSS patch. Critical considerations include navigation or sidebar behavior, chat width, prompt input, citations, code blocks, technical tables, dialogs/drawers, touch targets, long links, and scrolling. The input, citations, and overlays must remain mobile-safe, and technical content must not cause destructive horizontal page overflow. Exact breakpoints remain an implementation decision.
+
+Accessibility requirements include semantic HTML, keyboard usability, visible focus, accessible labels, reasonable focus management, screen-reader-conscious controls and status announcements where appropriate, understandable error/status presentation, sufficient interaction affordances, and usable touch targets. Useful animations and micro-interactions may improve feedback, but must not obscure state, block interaction, or simulate nonexistent work. Persian/RTL behavior must be correct if included in the selected language experience.
+
+### 10.8 Frontend security, production safety, and validation
+
+The frontend must never contain provider credentials, expose server-only environment variables, hardcode secrets, log credentials, or display raw backend diagnostics. It may use only browser-safe public variables, must treat backend-provided data as untrusted where appropriate, and must render Markdown, links, and technical content safely. Security architecture remains backend/platform-owned; the frontend owns browser-safe behavior and UX.
+
+Production acceptance requires a successful frontend build, no hardcoded localhost URLs, correct same-origin or configured API handling, production-safe asset paths, a correct public/server-only environment boundary, working production streaming, and verified critical desktop and mobile flows on Liara. Both team members verify the deployed experience after deployment is explicitly authorized.
+
+Pragmatic frontend validation prioritizes chat input/send, streamed rendering, source rendering, suggestions, clarification, error and retry states, responsive critical flows, accessibility-critical interactions, and shared-contract integration. Testing should target demo and regression risk rather than maximize test volume.
+
+### 10.9 Technology guidance
+
+The approved foundation is Next.js, React, TypeScript, and Tailwind CSS. When it improves delivery speed and consistency, shadcn/ui is preferred for reusable general primitives; AI Elements may accelerate AI/chat-specific UI when it improves speed or quality. Both remain optional implementation aids rather than architecture or judging requirements and must not be forced where a simpler project-owned implementation is better.
+
+Do not introduce a competing runtime UI library such as Material UI, Ant Design, Carbon, Fluent UI, or Bootstrap components without a specific approved reason. Those systems may be consulted as design or UX references only.
+
+### 10.10 Visual design intentionally left open
+
+`SPEC.md` deliberately does not predetermine:
+
+- color palette, brand colors, or light/dark visual identity
+- exact typography or font choices
+- gradients, shadows, border-radius style, or exact spacing scale
+- exact component appearance or illustration/icon aesthetic
+- animation style or final page composition
+- sidebar treatment, chat-bubble design, or citation-card design
+- final dashboard or layout aesthetic
+
+These decisions belong to the frontend owner, subject to usability, accessibility, responsiveness, consistency, professional quality, and the judging requirements above. The specification defines what the experience must achieve, not exactly how it must look. Planned requirements must not be presented as implemented or verified, and fake UI must not be created merely to satisfy a checklist.
 
 ## 11. Security requirements
 
