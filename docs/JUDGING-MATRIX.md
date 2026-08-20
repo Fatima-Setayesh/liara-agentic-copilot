@@ -1,5 +1,17 @@
 # Judging Matrix
 
+> **Internal planning allocation — not official organizer sub-scores.**
+>
+> The only official scoring weights are:
+> - Answer Quality & Correctness — 80
+> - UI & UX — 55
+> - Agentic Features & Personalization — 50
+> - Security / Reliability / Monitoring — 50
+> - Liara Deployment — 40
+> - Cost Optimization — 25
+>
+> Any smaller breakdown below is internal planning only.
+
 This matrix turns the 300-point rubric into verifiable product work. A row is
 `Complete` only when its evidence exists and can be reproduced. Foundation work
 may enable a row without completing the scored behavior.
@@ -15,7 +27,7 @@ Status vocabulary: `Foundation`, `Planned`, `In progress`, `Complete`, `Blocked`
 | **Answer Quality & Correctness subtotal** | **80** |  |  |  |  |
 | UI/UX — core chat experience | 20 | Accessible conversation surface using reusable components where they improve delivery | Working message input, streamed response, code rendering, loading, retry, and empty/error states | Planned | Frontend |
 | UI/UX — responsive and accessible behavior | 15 | Keyboard-first, responsive mobile/desktop layout with visible focus and semantic controls | Manual accessibility checklist, keyboard demo, and responsive screenshots/tests | Planned | Frontend |
-| UI/UX — honest lifecycle feedback | 10 | Render backend-provided agent states and interruption/retry behavior without fake progress | Demo of retrieving/generating/completed/failed and cancellation states tied to real events | Foundation | Shared (Backend contract; Frontend presentation) |
+| UI/UX — honest lifecycle feedback | 10 | Render backend-provided activity, outcome, and interruption/retry behavior without fake progress | Demo of retrieving/generating activity and completed/cancelled/failed outcomes tied to real events | Foundation | Shared (Backend contract; Frontend presentation) |
 | UI/UX — sources, suggestions, and preferences | 10 | Traceable source UI, actionable follow-ups, and understandable personalization controls | Judge can inspect a citation, use a suggestion, and change a supported preference | Foundation | Frontend (UI); Backend / Platform (data) |
 | **UI & User Experience subtotal** | **55** |  |  |  |  |
 | Agentic — intent and clarification | 15 | Detect request intent and ask only decision-relevant clarifying questions | Scenario suite demonstrates both clarification and direct-answer paths | Planned | Backend / Platform |

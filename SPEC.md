@@ -120,7 +120,7 @@ Agentic behavior must represent real operations:
 - generate useful follow-up actions
 - surface only real activity states
 
-Stable v1 states are `understanding`, `clarification_required`, `retrieving`, `generating`, `completed`, and `failed`. Hidden chain-of-thought must never be transmitted or displayed. Additional states such as `executing` require an implemented operation and a protected contract change.
+Stable v1 activity states are `understanding`, `clarification_required`, `retrieving`, and `generating`. Terminal outcomes are `completed`, `cancelled`, and `failed`. A completed outcome carries `evidenceStatus` as `sufficient`, `partial`, or `none`; `none` is an honest completed response, not a retrieval failure. User cancellation is an outcome rather than an application error. Hidden chain-of-thought must never be transmitted or displayed. Additional activity states such as `executing` require an implemented operation and a protected contract change.
 
 ## 9. Context and personalization
 
@@ -206,10 +206,11 @@ The v1 foundation is exported from `src/contracts/chat/v1` and includes:
 - authoritative Liara source/citation shape
 - structured suggestions
 - stable agent states
+- typed terminal outcomes and evidence sufficiency
 - stable safe error codes
 - input and official-source runtime validation
 
-The planned transport is AI SDK 7’s UI Message Stream Protocol over server-sent events. Text uses native stream parts; citations, suggestions, states, and in-stream domain errors use typed data parts. The route itself is not implemented in the foundation phase.
+The planned transport is AI SDK 7’s UI Message Stream Protocol over server-sent events. Text uses native stream parts; citations, suggestions, activity, terminal outcome, and in-stream domain errors use typed data parts. `TIMEOUT` is distinct from provider unavailability or stream interruption so retry UX can respond appropriately. The route itself is not implemented in the foundation phase.
 
 ## 17. Explicit anti-patterns
 

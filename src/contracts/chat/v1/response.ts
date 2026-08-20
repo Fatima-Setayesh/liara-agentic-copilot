@@ -5,6 +5,8 @@ import {
   AGENT_STATES,
   CHAT_CONTRACT_VERSION,
   CHAT_ERROR_CODES,
+  CHAT_OUTCOME_STATUSES,
+  EVIDENCE_STATUSES,
 } from "./constants";
 
 const opaqueIdSchema = z
@@ -70,6 +72,23 @@ export const agentStateEventSchema = z.strictObject({
   state: agentStateSchema,
 });
 
+export const evidenceStatusSchema = z.enum(EVIDENCE_STATUSES);
+
+export const chatOutcomeStatusSchema = z.enum(CHAT_OUTCOME_STATUSES);
+
+export const chatOutcomeSchema = z.discriminatedUnion("status", [
+  z.strictObject({
+    status: z.literal("completed"),
+    evidenceStatus: evidenceStatusSchema,
+  }),
+  z.strictObject({
+    status: z.literal("cancelled"),
+  }),
+  z.strictObject({
+    status: z.literal("failed"),
+  }),
+]);
+
 export const chatErrorCodeSchema = z.enum(CHAT_ERROR_CODES);
 
 export const chatErrorSchema = z.strictObject({
@@ -96,6 +115,9 @@ export type Suggestion = z.infer<typeof suggestionSchema>;
 export type SuggestionsPayload = z.infer<typeof suggestionsPayloadSchema>;
 export type AgentState = z.infer<typeof agentStateSchema>;
 export type AgentStateEvent = z.infer<typeof agentStateEventSchema>;
+export type EvidenceStatus = z.infer<typeof evidenceStatusSchema>;
+export type ChatOutcomeStatus = z.infer<typeof chatOutcomeStatusSchema>;
+export type ChatOutcome = z.infer<typeof chatOutcomeSchema>;
 export type ChatErrorCode = z.infer<typeof chatErrorCodeSchema>;
 export type ChatError = z.infer<typeof chatErrorSchema>;
 export type ChatErrorResponse = z.infer<typeof chatErrorResponseSchema>;
@@ -105,6 +127,7 @@ export type ChatDataParts = {
   citation: Citation;
   suggestions: SuggestionsPayload;
   "agent-state": AgentStateEvent;
+  outcome: ChatOutcome;
   error: ChatError;
 };
 

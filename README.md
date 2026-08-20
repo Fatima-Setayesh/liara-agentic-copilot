@@ -98,6 +98,7 @@ The protected v1 contract lives in [`src/contracts/chat/v1`](src/contracts/chat/
 - official Liara source/citation metadata
 - structured suggestions
 - real agent activity states
+- terminal outcomes with evidence sufficiency and non-error cancellation
 - safe stable error codes
 - runtime input and official-source validation
 

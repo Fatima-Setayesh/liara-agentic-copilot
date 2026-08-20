@@ -156,12 +156,13 @@ The accepted planned transport is AI SDK 7’s UI Message Stream Protocol over S
 - native text start/delta/end parts for answer content
 - persistent `data-citation` parts for authoritative source payloads
 - persistent `data-suggestions` for next actions
-- transient `data-agent-state` for real state transitions
-- `data-error` for anticipated failures after headers are committed
+- transient `data-agent-state` for real non-terminal activity
+- persistent `data-outcome` for `completed`, `cancelled`, or `failed`
+- `data-error` for anticipated failures after headers are committed, followed by a `failed` outcome
 - structured JSON errors for failures before streaming starts
-- native finish plus final `completed` state for successful answers
+- native finish plus a `completed` outcome carrying `sufficient`, `partial`, or `none` evidence status
 
-Client cancellation uses `useChat().stop()`. Request abort signals must propagate through retrieval and `streamText`; server stream consumption/finalization must still run. Resume support is deferred because resumable streams conflict with abort semantics. Reasoning transmission remains disabled.
+Client cancellation uses `useChat().stop()` and resolves as `cancelled`, not as `data-error`. Request abort signals must propagate through retrieval and `streamText`; server stream consumption/finalization must still run. `STREAM_INTERRUPTED` is reserved for unexpected interruption, and `TIMEOUT` remains a distinct retryable error category. Resume support is deferred because resumable streams conflict with abort semantics. Reasoning transmission remains disabled.
 
 See [ADR-0002](../adr/0002-ai-sdk-ui-message-stream.md).
 
@@ -215,14 +216,21 @@ Answer quality and citation correctness are hard constraints; negligible savings
 - CLI, console, and GitHub deployment paths
 - health-check-gated traffic promotion
 
-This project targets Node 24 locally and in CI. No `liara.json` is committed yet because the current official Next.js page explicitly describes dependency installation with `npm install`, which conflicts with the non-negotiable pnpm-only lockfile policy. Before deployment configuration:
+This project targets Node 24 locally and in CI. No `liara.json` is committed yet because the current official Next.js page explicitly describes dependency installation with `npm install`, which conflicts with the non-negotiable pnpm-only lockfile policy.
 
-1. verify whether the current Liara Next builder honors `packageManager` and `pnpm-lock.yaml`
-2. verify exact install/build/start behavior using a disposable deployment
-3. confirm port/host behavior
-4. validate AI SDK SSE chunking, buffering, timeout, cancellation, and disconnect cleanup
-5. add a cheap health endpoint and command
-6. configure secrets through protected Liara variables, never committed `envs`
+**Early production milestone:** immediately after the first real end-to-end chat vertical slice, perform an explicitly authorized Liara deployment. Do not defer it until the final demo. It must verify:
+
+1. pnpm lockfile and package-manager compatibility
+2. Next.js build and start behavior
+3. Node runtime compatibility
+4. environment variables
+5. streaming behavior
+6. buffering
+7. timeout behavior
+8. cancellation and disconnect handling
+9. production logs
+
+A cheap health check remains required before production readiness. Configure secrets through protected Liara variables, never committed `envs`.
 
 Deployment and those external changes require explicit user authorization.
 
