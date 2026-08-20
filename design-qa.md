@@ -1,66 +1,83 @@
-# Chat Workspace Design QA
+# Chat Response Experience Design QA
 
-- Source visual truth: the inline chat-workspace reference attached to the implementation request
-- Implementation target: `src/features/chat/chat-workspace.tsx` and `src/features/chat/chat-workspace.module.css`
-- Protected baseline: the existing Liara landing/empty state and `src/features/home/copilot-home.module.css`
-- Intended state: first prompt submitted, desktop chat workspace visible, right inspector behavior unchanged
-- Intended desktop viewport: 1600 × 1307 reference proportions, normalized to the available application viewport
-- Implementation screenshot: unavailable because the configured browser runtime reported no available browser instances
+- Source visual truth: inline chat-response reference attached to the current user request
+- Source pixels: 2200 × 1320 as provided in the conversation
+- Implementation target: `src/features/chat/ai-response-card.tsx`, `src/features/chat/chat-workspace.tsx`, and `src/features/chat/chat-workspace.module.css`
+- Protected baseline: existing homepage, ambient motion, sidebars, top bar, right panel, hero, composer, quick actions, and all home styles
+- Intended viewport: desktop chat state at the reference aspect ratio, with responsive mobile fallback
+- Implementation screenshot path: unavailable
+- Implementation pixels / CSS viewport / device scale factor: unavailable because no browser instance is connected
+- State: first user message submitted and response workspace visible
 
 ## Full-view comparison evidence
 
-Blocked. The reference image is available in the conversation, but no browser-rendered implementation screenshot could be captured for a same-state comparison.
+Blocked. The source reference is available, but the configured in-app browser is unavailable and browser discovery returned no instances. A same-state implementation screenshot could not be captured.
 
 ## Focused region comparison evidence
 
-Blocked for the same reason. Source-level inspection confirms the new workspace is isolated to its own component and stylesheet, but optical fidelity cannot be certified without rendered pixels.
+Blocked. Focused comparisons of the user message, response header, diagnosis/code panel, agent progress, sources, actions, and follow-up composer require a rendered implementation capture.
 
 ## Findings
 
-- [P1] Browser-rendered chat workspace verification is unavailable.
-  - Location: full chat workspace after first prompt submission.
-  - Evidence: browser selection returned `No browser is available`; runtime discovery returned an empty browser list.
-  - Impact: responsive fit, internal scrolling, composer docking, animation appearance, and comparison against the supplied screenshot cannot be visually certified.
-  - Fix: reconnect the in-app browser, submit a prompt, and capture the desktop and mobile chat states.
+- [P1] Rendered visual verification is unavailable.
+  - Location: complete post-submit chat workspace.
+  - Evidence: in-app browser selection returned `Browser is not available: iab`; browser discovery returned `[]`.
+  - Impact: optical alignment, viewport density, internal scrolling, responsive stacking, hover states, and visual fidelity against the supplied reference cannot be certified.
+  - Fix: reconnect the in-app browser, submit a message, capture the desktop and mobile states, and compare them with the source in a shared visual input.
 
-- [P2] A grounded answer backend is not present in the current repository.
-  - Location: response, agent progress, and sources sections.
-  - Evidence: the repository contains the versioned `/api/chat` contract but no route implementation.
-  - Impact: the UI must show an honest pending state and cannot display fabricated Liara guidance, agent operations, or citations.
-  - Fix: connect the existing versioned UI-message contract to an authoritative chat route in a separate backend task.
+- [P2] Grounded product answers remain backend-blocked.
+  - Location: diagnosis, progress, and sources content.
+  - Evidence: the repository provides the typed `/api/chat` contract but no authoritative route implementation.
+  - Impact: the frontend can present the complete response UI but must show honest pending states instead of inventing Liara guidance, citations, or retrieval activity.
+  - Fix: implement the server-side chat stream and pass typed text, citations, agent states, and suggestions into these presentation components.
 
 ## Required fidelity surfaces
 
-- Fonts and typography: inherited from the existing application; new workspace uses the same compact hierarchy and muted/mint emphasis.
-- Spacing and layout rhythm: conversation stream, structured response, progress, sources, actions, and docked composer follow the reference hierarchy while staying inside the existing content column.
-- Colors and visual tokens: existing dark glass, cyan, mint, border, and glow direction reused; no new brand color introduced.
-- Image quality and asset fidelity: existing `/liara-logo.png` reused for the assistant avatar; Lucide used for UI icons.
-- Copy and content: client copy clearly identifies the absence of a grounded service and does not manufacture platform claims.
-- Motion and interaction: new mount, message, and pending-state transitions are additive; all existing motion CSS remains untouched.
-- Responsiveness and accessibility: desktop stream scrolls internally; mobile returns to document flow. Regions, timestamps, copy buttons, source expansion, and status messaging have accessible semantics.
+- Fonts and typography: new response UI inherits the existing application font stack and uses compact 9–14px tool typography, restrained weights, and clear response hierarchy.
+- Spacing and layout rhythm: the new response card follows the reference’s compact user row, bordered primary response surface, two-column answer/progress composition, internal panels, and full-width follow-up composer.
+- Colors and visual tokens: only the existing dark glass, cyan, mint, muted gray, and warm pending-state semantics are used.
+- Image quality and asset fidelity: the existing `/liara-logo.png` brand asset is reused for the AI avatar; all interface symbols use the existing Lucide library.
+- Copy and content: the UI identifies unavailable grounding explicitly. It does not manufacture Liara diagnoses, commands, source metadata, or completed retrieval states.
 
 ## Protected empty-state verification
 
-- `src/features/home/copilot-home.module.css` SHA-256 remains `4621EC73D2C97ED419E257A97BA34E334F825D6D7AB1D31C2CA6A5BA10D7A713`, matching the pre-implementation hash.
-- The landing hero, logo, heading, subtitle, benefit row, suggestion cards, right panel, background layers, and footer remain the same code path while `chatEntries.length === 0`.
-- The existing composer uses its original markup and styling in empty mode; only successful submission now invokes the additive workspace transition.
-- Lint, typecheck, contract tests, and production build pass.
+- `src/features/home/copilot-home.tsx` remains SHA-256 `60D725ADC938DD2AA3AA5CEC18A8BDA28B8E6A784B81CEABDCC1EF9759B685BA`.
+- `src/features/home/copilot-home.module.css` remains SHA-256 `4621EC73D2C97ED419E257A97BA34E334F825D6D7AB1D31C2CA6A5BA10D7A713`.
+- No existing homepage, sidebar, header, right-panel, hero, input, quick-action, background, animation, or transition file was changed.
+- Initial server-rendered HTML still contains the homepage heading and omits the chat-workspace state before submission.
 
 ## Interaction checks
 
-- First prompt submission creates a timestamped user entry and enters chat mode.
-- Chat-mode composer reuses the existing input implementation without quick-action marquee duplication.
-- Suggested next actions add real conversation entries.
-- Response and code blocks expose copy actions.
-- Source details are expandable and accept only the existing typed citation model.
-- Browser click testing, console inspection, and screenshot comparison remain blocked.
+- Source inspection confirms the first successful composer submit still enters chat mode.
+- User messages render with real timestamps.
+- Response feedback buttons toggle independently.
+- Full-response and code-block copy controls are wired.
+- Source cards expand and link externally only when typed backend citations exist.
+- Suggested next actions submit follow-up prompts through the existing conversation handler.
+- The original composer is reused in follow-up mode without changing its implementation or visual tokens.
+- Browser click testing, focus inspection, console inspection, and screenshot comparison are blocked.
+
+## Validation
+
+- ESLint passed with zero warnings.
+- TypeScript strict-mode typecheck passed.
+- Vitest passed: 1 file, 4 tests.
+- Next.js production build passed.
+- `git diff --check` passed.
 
 ## Comparison history
 
-- Pass 1: isolated implementation complete; static and build validation pass; rendered comparison blocked because no browser instance is connected.
+- Pass 1: response composition implemented from the new reference; source-level and build validation passed; rendered comparison blocked because no browser is connected.
+
+## Implementation checklist
+
+- Reconnect the in-app browser.
+- Capture the submitted desktop state at the reference aspect ratio.
+- Capture the responsive mobile state.
+- Compare full view and focused response regions, then address any visible P0/P1/P2 mismatch.
 
 ## Follow-up polish
 
-- None proposed until rendered comparison evidence is available; visual tuning without that evidence would be speculative.
+- No speculative visual tuning is proposed without rendered comparison evidence.
 
 final result: blocked

@@ -96,7 +96,15 @@ function TextBlock({ content }: { content: string }) {
   return elements;
 }
 
-function CodeBlock({ content, language }: { content: string; language: string }) {
+export function CodeBlock({
+  content,
+  language,
+  label,
+}: {
+  content: string;
+  language: string;
+  label?: string;
+}) {
   const [copied, setCopied] = useState(false);
 
   async function copyCode() {
@@ -108,7 +116,7 @@ function CodeBlock({ content, language }: { content: string; language: string })
   return (
     <div className={styles.codeBlock}>
       <div className={styles.codeHeader}>
-        <span>{language}</span>
+        <span>{label ?? language}</span>
         <button type="button" onClick={copyCode} aria-label="Copy code block">
           {copied ? <Check size={14} /> : <Copy size={14} />}
           <span>{copied ? "Copied" : "Copy"}</span>
