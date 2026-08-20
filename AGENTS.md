@@ -77,15 +77,39 @@ A shared-contract change requires a clear reason, communication with the other d
 
 ## Git rules
 
-- **Never push without explicit user authorization.** Silence is not permission.
-- Never force-push, rewrite published history, deploy, open or merge a PR, create or push tags, or merge into `main`/`integration` without explicit authorization.
+- The coding agent performs authorized Git operations for the user. Do not ask the user to create branches, commit, push, merge, or run other Git commands manually.
+- On an already-approved branch, the agent may inspect Git state, edit files, install already-approved dependencies, run validation, and create focused local commits without additional permission.
+- **Explicit user approval is required before every branch creation, push, merge, branch deletion, rebase or other history rewrite, and deployment.** Silence, task completion, or an earlier approval for a different operation is not permission.
+- Opening a PR and creating or pushing tags also require explicit user authorization because they change remote state.
+- Never force-push. This prohibition is absolute, including after approval for another history operation.
 - Normal flow is `feature branch -> integration -> validation -> main`.
 - Do not perform feature development directly on `main`.
 - Use focused branches and Conventional Commits.
 - Small local commits are allowed when they are cohesive and reviewable.
 - Preserve unrelated or user-owned work in a dirty tree.
 
-Before any authorized future push, report the branch, commits, changed files, tests executed, and known limitations, then wait for explicit permission.
+Before creating a branch, report:
+
+- proposed branch name
+- base branch
+- why the branch is needed
+- intended scope of work
+
+Then wait for explicit approval. After approval, the agent creates the branch.
+
+Before every push, report:
+
+- current branch
+- remote destination
+- commits that will be pushed
+- important files changed
+- validation results
+- whether the working tree is clean
+- known risks or limitations
+
+Then wait for explicit approval. After approval, the agent performs the push. A push approval applies only to the described branch, destination, and commits; new commits or a changed destination require a new approval.
+
+Before a merge, branch deletion, rebase/history rewrite, or deployment, identify the exact target and impact, then wait for explicit approval. Never treat a previously approved foundation task or development task as standing permission to push or deploy.
 
 ## Package and dependency rules
 

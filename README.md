@@ -115,7 +115,9 @@ focused feature branch -> integration -> validation -> main
 - `integration`: frontend/backend integration and pre-production validation
 - feature branches: scoped implementation work using Conventional Commits
 
-Never push, merge, open a PR, or deploy without explicit user authorization. See [`AGENTS.md`](AGENTS.md).
+The coding agent performs Git operations after authorization; the user should not need to run Git commands manually. Routine work and focused local commits are allowed on an already-approved branch.
+
+Explicit user approval is required before creating or deleting a branch, pushing, merging, rebasing or rewriting history, opening a PR, creating or pushing tags, or deploying. Before branch creation, the agent reports the proposed name, base, reason, and scope. Before every push, it reports the branch, destination, commits, important files, validation, worktree state, and known risks, then waits for approval. Force-push is never allowed. See [`AGENTS.md`](AGENTS.md).
 
 ## Testing and CI
 

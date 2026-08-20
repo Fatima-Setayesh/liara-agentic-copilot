@@ -226,7 +226,7 @@ Do not:
 - use an expensive model for every request without measured justification
 - add a second UI framework
 - claim planned behavior is implemented
-- deploy or push without explicit permission
+- create or delete branches, push, merge, rebase or rewrite history, or deploy without explicit permission
 
 ## 18. Definition of done
 
