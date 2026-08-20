@@ -8,8 +8,8 @@ import "./globals.css";
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
-  title: "Liara Agentic Developer Copilot",
-  description: "A grounded developer and troubleshooting copilot for Liara.",
+  title: "Liara Copilot — Build, deploy, and debug",
+  description: "Grounded developer guidance from official Liara documentation.",
 };
 
 export default function RootLayout({
