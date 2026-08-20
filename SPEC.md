@@ -31,7 +31,7 @@ The implementation targets the full 300-point hackathon rubric:
 | Cost Optimization | 25 |
 | **Total** | **300** |
 
-Every feature must have observable acceptance evidence. Documentation or visual labels alone do not count as implementation.
+This order drives implementation priority. Every significant decision must improve a scored outcome or materially improve maintainability, security, reliability, parallel delivery, or Liara deployability. Every feature must have observable acceptance evidence; documentation or visual labels alone do not count as implementation.
 
 ## 3. Authoritative knowledge
 
@@ -130,7 +130,7 @@ Conversation architecture must support bounded history, relevance filtering, sum
 
 ## 10. UI and UX requirements
 
-The frontend owner defines the visual implementation using Next.js, React, Tailwind CSS, shadcn/ui, and AI Elements. The final experience must include:
+The frontend owner defines the visual implementation on the Next.js, React, and Tailwind CSS foundation. shadcn/ui and AI Elements are optional accelerators, not acceptance criteria or architectural dependencies. The final experience must include:
 
 - responsive, accessible desktop and mobile chat
 - clear source and citation presentation
@@ -153,7 +153,7 @@ The frontend consumes typed message parts; it must not parse arbitrary backend s
 - User errors are structured, safe, and free of stack traces or provider internals.
 - Logs redact secrets and avoid unnecessary prompt or personal-data capture.
 - CI uses least privilege.
-- Dependencies and generated skills are reviewed before use.
+- Dependencies and generated code are reviewed before use.
 - Authentication and authorization are added only if a validated product flow requires identity.
 
 ## 12. Reliability requirements
@@ -225,6 +225,8 @@ Do not:
 - add a database, vector store, queue, auth vendor, or monitoring service for appearance
 - use an expensive model for every request without measured justification
 - add a second UI framework
+- treat an optional tool, skill catalog, or infrastructure component as a product requirement
+- spend foundation time on optional tooling without a concrete scored outcome
 - claim planned behavior is implemented
 - create or delete branches, push, merge, rebase or rewrite history, or deploy without explicit permission
 

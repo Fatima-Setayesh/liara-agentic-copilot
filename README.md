@@ -7,11 +7,10 @@ A production-minded, grounded developer and troubleshooting copilot for Liara. T
 **Foundation only.** The repository currently includes:
 
 - a minimal Next.js App Router scaffold
-- strict TypeScript, Tailwind CSS, and a Radix-based shadcn/ui foundation
-- Vercel AI SDK and AI Elements conventions without a chat implementation
+- strict TypeScript and Tailwind CSS with a minimal optional shadcn-compatible scaffold
+- Vercel AI SDK streaming contract planning without a chat implementation
 - versioned runtime-validated chat contracts and contract tests
 - architecture, governance, rubric tracking, and lightweight CI
-- official repo-scoped shadcn and AI Elements agent skills
 
 The chat API, model provider, RAG pipeline, persistence, rate limiting, monitoring, deployment configuration, and product UI are **planned, not implemented**.
 
@@ -41,12 +40,11 @@ See [the architecture document](docs/architecture/ARCHITECTURE.md) and [product 
 - Next.js 16 App Router
 - React 19 and TypeScript 5 in strict mode
 - Tailwind CSS 4
-- shadcn/ui 4 with the Radix base
-- Vercel AI SDK 7 and `@ai-sdk/react` 4
+- Vercel AI SDK 7 for typed streaming and shared message contracts
 - Zod 4 for trust-boundary schemas
 - Vitest 4 for focused unit tests
 
-AI Elements prerequisites are installed, but no unused AI Elements components are checked in.
+The checked-in Radix-based shadcn configuration and base stylesheet are replaceable frontend scaffold details, not scoring requirements or architecture drivers. Repo-scoped UI skills are development-only aids and do not ship in the application bundle. No shadcn or AI Elements component is checked in; Fatima can add only the components justified by real UI work.
 
 ## Local setup
 

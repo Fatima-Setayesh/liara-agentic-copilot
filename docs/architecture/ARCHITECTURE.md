@@ -45,12 +45,12 @@ See [ADR-0001](../adr/0001-single-nextjs-application.md).
 | Area | Responsibility | Owner |
 | --- | --- | --- |
 | `src/app/(product)/` and visible page composition | Product routes and UX | Frontend / Fatima |
-| `src/components/`, `src/features/`, `src/styles/` | UI primitives, AI Elements, visible features, accessibility | Frontend / Fatima |
+| `src/components/`, `src/features/`, `src/styles/` | UI primitives, visible features, accessibility | Frontend / Fatima |
 | `src/app/api/` | Thin HTTP/stream boundaries | Backend/platform |
 | `src/server/` | Orchestration, retrieval, providers, context, security, observability, cost, persistence | Backend/platform |
 | `src/contracts/` | Runtime schemas and shared types | Shared and protected |
 | root configs, CI, deployment files | Architecture and platform | Backend/platform; coordinate breaking changes |
-| `components.json` | shadcn generation contract | Shared and protected |
+| `components.json` | Optional frontend component-generation configuration | Shared and protected |
 
 The foundation page is intentionally minimal. Backend work must not redesign the visible product, and frontend work must not construct citations or move server policy into browser code.
 
@@ -237,7 +237,6 @@ Verified source pages:
 | Decision | Current choice | Tradeoff / trigger to revisit |
 | --- | --- | --- |
 | Deployable shape | One Next.js app | Split only for verified platform or scaling need |
-| UI base | shadcn Radix + neutral Nova scaffold | Radix chosen for current AI Elements compatibility; frontend owns later visual tokens |
 | Stream protocol | AI SDK UI Message Stream | Couples shared parts to AI SDK semantics but avoids custom protocol risk |
 | Model/provider | Deferred behind adapter | Select after quality, access, latency, and cost evaluation |
 | Retrieval index | Deferred | Benchmark corpus and lexical baseline before vector infrastructure |

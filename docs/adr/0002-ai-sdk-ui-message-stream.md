@@ -32,7 +32,7 @@ Benefits:
 - official, typed client/server lifecycle
 - structured metadata without string parsing
 - standard cancellation and stream handling
-- direct fit with AI Elements and current AI SDK APIs
+- direct fit with typed frontend consumers and current AI SDK APIs
 
 Costs:
 
