@@ -10,7 +10,10 @@
   overflow: hidden;
   color: var(--text);
   background: #020708;
+  transition: grid-template-columns 320ms cubic-bezier(.22, .8, .24, 1);
 }
+
+.sidebarIsCollapsed { grid-template-columns: 86px minmax(0, 1fr); }
 
 .sidebar {
   position: relative;
@@ -26,6 +29,7 @@
     radial-gradient(circle at 28% 7%, rgba(24, 192, 199, 0.08), transparent 21%),
     linear-gradient(175deg, rgba(5, 18, 21, 0.99), rgba(4, 14, 17, 0.98));
   box-shadow: 12px 0 45px rgba(0, 0, 0, 0.25);
+  transition: padding 320ms cubic-bezier(.22, .8, .24, 1), border-radius 320ms ease;
 }
 
 .sidebar::after {
@@ -62,6 +66,7 @@
   position: relative;
   z-index: 1;
   justify-content: space-between;
+  min-height: 58px;
 }
 
 .wordmark {
@@ -71,6 +76,15 @@
   font-weight: 560;
   letter-spacing: -1.25px;
   text-decoration: none;
+}
+
+.wordmark > span,
+.newConversation > span,
+.navItem > span,
+.profileCopy,
+.profileButton > svg,
+.recentSection {
+  transition: opacity 180ms ease, visibility 180ms ease;
 }
 
 .wordmark strong {
@@ -129,6 +143,80 @@
   border-color: rgba(96, 250, 215, 0.72);
   box-shadow: 0 12px 32px rgba(15, 199, 171, 0.16), inset 0 1px rgba(255,255,255,.08);
 }
+
+.sidebarCollapse {
+  position: absolute;
+  top: 12px;
+  right: 0;
+  z-index: 2;
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  color: #859398;
+  border: 1px solid rgba(113, 188, 190, .16);
+  border-radius: 9px;
+  background: rgba(7, 22, 25, .86);
+  box-shadow: inset 0 1px rgba(255, 255, 255, .025);
+  cursor: pointer;
+  transition: color 180ms ease, border-color 180ms ease, background 180ms ease, transform 240ms ease, box-shadow 180ms ease;
+}
+
+.sidebarCollapse:hover {
+  color: var(--mint);
+  border-color: rgba(79, 231, 211, .38);
+  background: rgba(12, 39, 41, .92);
+  box-shadow: 0 0 17px rgba(45, 221, 203, .09), inset 0 1px rgba(255,255,255,.04);
+  transform: translateY(-1px);
+}
+
+.sidebarCollapsed {
+  padding: 24px 13px 18px;
+  border-radius: 0 18px 18px 0;
+}
+
+.sidebarCollapsed .sidebarTop {
+  flex-direction: column;
+  justify-content: flex-start;
+  min-height: 108px;
+}
+
+.sidebarCollapsed .wordmark { justify-content: center; }
+.sidebarCollapsed .compactBrandMark { width: 48px; height: 48px; }
+.sidebarCollapsed .compactBrandMark img { width: 33px; height: 33px; }
+
+.sidebarCollapsed .sidebarCollapse {
+  position: static;
+  margin-top: 13px;
+}
+
+.sidebarCollapsed .wordmark > span,
+.sidebarCollapsed .newConversation > span,
+.sidebarCollapsed .navItem > span,
+.sidebarCollapsed .profileCopy,
+.sidebarCollapsed .profileButton > svg,
+.sidebarCollapsed .recentSection {
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  opacity: 0;
+}
+
+.sidebarCollapsed .newConversation {
+  width: 52px;
+  margin: 26px auto 0;
+  padding: 0;
+}
+
+.sidebarCollapsed .navList { margin-top: 20px; }
+.sidebarCollapsed .navItem { justify-content: center; gap: 0; padding: 0; }
+.sidebarCollapsed .navItem::before { left: 1px; }
+.sidebarCollapsed .sidebarDivider { margin-block: 20px; }
+.sidebarCollapsed .recentSection { margin: 0; }
+.sidebarCollapsed .profileArea { padding-top: 14px; }
+.sidebarCollapsed .profileButton { justify-content: center; gap: 0; }
+.sidebarCollapsed .avatar { width: 44px; height: 44px; }
 
 .navList {
   position: relative;
@@ -497,6 +585,12 @@
   flex: 1;
   min-height: 0;
   padding: 10px 34px 86px 56px;
+  transition: grid-template-columns 340ms cubic-bezier(.22, .8, .24, 1), gap 340ms cubic-bezier(.22, .8, .24, 1);
+}
+
+.rightPanelIsCollapsed .contentLayout {
+  grid-template-columns: minmax(520px, 1fr) 40px;
+  gap: 18px;
 }
 
 .hero {
@@ -754,11 +848,68 @@
   filter: drop-shadow(0 0 6px rgba(76, 244, 218, .38));
 }
 
+.rightRailDock {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  align-items: center;
+}
+
 .rightRail {
   display: grid;
+  width: 100%;
   align-content: center;
   gap: 20px;
   padding-bottom: 14px;
+  opacity: 1;
+  transform: translateX(0);
+  visibility: visible;
+  transition: opacity 200ms ease, transform 320ms cubic-bezier(.22, .8, .24, 1), visibility 200ms ease;
+}
+
+.rightRailToggle {
+  position: absolute;
+  top: 50%;
+  left: -20px;
+  z-index: 4;
+  display: grid;
+  width: 38px;
+  height: 54px;
+  place-items: center;
+  color: #8c999d;
+  border: 1px solid rgba(105, 189, 189, .18);
+  border-radius: 12px;
+  background: rgba(5, 20, 23, .92);
+  box-shadow: 0 12px 28px rgba(0,0,0,.3), inset 0 1px rgba(255,255,255,.03);
+  cursor: pointer;
+  transform: translateY(-50%);
+  transition: left 320ms cubic-bezier(.22, .8, .24, 1), color 180ms ease, border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+}
+
+.rightRailToggle:hover {
+  color: var(--mint);
+  border-color: rgba(75, 232, 211, .4);
+  background: rgba(10, 38, 40, .95);
+  box-shadow: 0 12px 30px rgba(0,0,0,.34), 0 0 18px rgba(43, 218, 199, .1);
+}
+
+.rightPanelIsCollapsed .rightRailDock {
+  min-height: 65%;
+  border-left: 1px solid rgba(91, 174, 177, .1);
+}
+
+.rightPanelIsCollapsed .rightRail {
+  opacity: 0;
+  transform: translateX(18px);
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.rightPanelIsCollapsed .rightRailToggle { left: 0; }
+
+.rightDrawerBackdrop,
+.mobileInspector {
+  display: none;
 }
 
 .glassCard {
@@ -837,7 +988,9 @@
 
 @media (max-width: 1280px) {
   .appShell { grid-template-columns: 278px minmax(0, 1fr); }
+  .sidebarIsCollapsed { grid-template-columns: 82px minmax(0, 1fr); }
   .sidebar { padding-inline: 24px 20px; }
+  .sidebarCollapsed { padding-inline: 12px; }
   .wordmark { gap: 9px; font-size: 22px; }
   .compactBrandMark { width: 50px; height: 50px; }
   .compactBrandMark img { width: 34px; height: 34px; }
@@ -856,11 +1009,66 @@
   .sidebarOpen { transform: translateX(0); }
   .sidebarBackdrop { position: fixed; inset: 0; z-index: 25; display: block; visibility: hidden; opacity: 0; border: 0; background: rgba(0,0,0,.62); backdrop-filter: blur(3px); transition: opacity 220ms ease, visibility 220ms ease; }
   .sidebarBackdropVisible { visibility: visible; opacity: 1; }
-  .mobileClose, .mobileMenu { display: grid; }
+  .sidebarCollapse { display: none; }
+  .mobileClose, .mobileMenu, .mobileInspector { display: grid; }
   .mobileClose { width: 38px; height: 38px; }
-  .mobileMenu { flex: 0 0 auto; width: 44px; height: 44px; border: 1px solid var(--line); border-radius: 12px; }
-  .contentLayout { grid-template-columns: 1fr; padding: 20px 42px 170px; }
-  .rightRail { grid-template-columns: 1fr 1fr; align-items: stretch; padding-top: 30px; }
+  .mobileMenu,
+  .mobileInspector { flex: 0 0 auto; width: 44px; height: 44px; color: #9ba8ac; border: 1px solid var(--line); border-radius: 12px; background: rgba(7, 21, 24, .68); cursor: pointer; }
+  .mobileInspector { place-items: center; }
+  .mobileMenu:hover,
+  .mobileInspector:hover { color: var(--mint); border-color: rgba(74, 225, 207, .36); background: rgba(11, 38, 40, .82); }
+  .contentLayout,
+  .rightPanelIsCollapsed .contentLayout { grid-template-columns: 1fr; padding: 20px 42px 170px; }
+  .rightRailDock {
+    position: fixed;
+    top: 76px;
+    right: 0;
+    bottom: 0;
+    z-index: 30;
+    display: block;
+    width: min(370px, 90vw);
+    padding: 18px;
+    overflow-y: auto;
+    border-left: 1px solid rgba(91, 185, 185, .2);
+    background: linear-gradient(165deg, rgba(6, 20, 23, .985), rgba(3, 12, 15, .99));
+    box-shadow: -24px 0 60px rgba(0,0,0,.42);
+    backdrop-filter: blur(22px);
+    transform: translateX(105%);
+    transition: transform 280ms cubic-bezier(.2,.8,.2,1);
+  }
+  .rightRailDockMobileOpen { transform: translateX(0); }
+  .rightRailDockMobileOpen .rightRail {
+    grid-template-columns: 1fr;
+    align-content: start;
+    gap: 15px;
+    padding-top: 54px;
+    opacity: 1;
+    transform: none;
+    visibility: visible;
+    pointer-events: auto;
+  }
+  .rightPanelIsCollapsed .rightRailDock { min-height: 0; border-left-color: rgba(91, 185, 185, .2); }
+  .rightRailToggle,
+  .rightPanelIsCollapsed .rightRailToggle {
+    top: 18px;
+    left: 18px;
+    width: 38px;
+    height: 38px;
+    transform: none;
+  }
+  .rightDrawerBackdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 25;
+    display: block;
+    visibility: hidden;
+    opacity: 0;
+    border: 0;
+    background: rgba(0,0,0,.62);
+    backdrop-filter: blur(3px);
+    transition: opacity 220ms ease, visibility 220ms ease;
+  }
+  .rightDrawerBackdropVisible { visibility: visible; opacity: 1; }
   .hero { padding-top: 25px; }
   .topbar { min-height: 94px; padding-block: 20px; }
   .statusPill { display: none; }
@@ -938,7 +1146,20 @@
   .newConversation,
   .suggestionCard,
   .glassCard,
-  .sendButton {
+  .sendButton,
+  .sidebarCollapse,
+  .rightRailToggle,
+  .mobileMenu,
+  .mobileInspector {
+    transition-duration: .01ms;
+  }
+
+  .appShell,
+  .sidebar,
+  .contentLayout,
+  .rightRail,
+  .rightRailDock,
+  .rightDrawerBackdrop {
     transition-duration: .01ms;
   }
 }

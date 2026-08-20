@@ -8,6 +8,8 @@ import {
   Bug,
   Check,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   CircleHelp,
   Cloud,
   Code2,
@@ -24,6 +26,10 @@ import {
   MoreHorizontal,
   Network,
   Paperclip,
+  PanelLeftClose,
+  PanelLeftOpen,
+  PanelRightClose,
+  PanelRightOpen,
   Plus,
   Rocket,
   ScrollText,
@@ -32,7 +38,6 @@ import {
   ShieldCheck,
   Sparkles,
   Target,
-  X,
   type LucideIcon,
 } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
@@ -113,7 +118,17 @@ function BrandMark({ compact = false }: { compact?: boolean }) {
   );
 }
 
-function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
+function Sidebar({
+  collapsed,
+  open,
+  onClose,
+  onToggleCollapsed,
+}: {
+  collapsed: boolean;
+  open: boolean;
+  onClose: () => void;
+  onToggleCollapsed: () => void;
+}) {
   const [activeItem, setActiveItem] = useState("Chat");
 
   return (
@@ -124,14 +139,26 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
         onClick={onClose}
         type="button"
       />
-      <aside className={`${styles.sidebar} ${open ? styles.sidebarOpen : ""}`} aria-label="Primary navigation">
+      <aside
+        className={`${styles.sidebar} ${collapsed ? styles.sidebarCollapsed : ""} ${open ? styles.sidebarOpen : ""}`}
+        aria-label="Primary navigation"
+      >
         <div className={styles.sidebarTop}>
           <a href="#" className={styles.wordmark} aria-label="Liara Copilot home">
             <BrandMark compact />
             <span>Liara <strong>Copilot</strong></span>
           </a>
+          <button
+            className={styles.sidebarCollapse}
+            type="button"
+            onClick={onToggleCollapsed}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+          </button>
           <button className={styles.mobileClose} type="button" onClick={onClose} aria-label="Close menu">
-            <X size={20} />
+            <ChevronLeft size={20} />
           </button>
         </div>
 
@@ -187,7 +214,13 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
   );
 }
 
-function Topbar({ onOpenMenu }: { onOpenMenu: () => void }) {
+function Topbar({
+  onOpenInspector,
+  onOpenMenu,
+}: {
+  onOpenInspector: () => void;
+  onOpenMenu: () => void;
+}) {
   const [searchValue, setSearchValue] = useState("");
 
   return (
@@ -221,6 +254,14 @@ function Topbar({ onOpenMenu }: { onOpenMenu: () => void }) {
         <button type="button" className={styles.topAvatar} aria-label="Open profile">L</button>
         <button type="button" className={styles.profileChevron} aria-label="Profile menu"><ChevronDown size={17} /></button>
       </div>
+      <button
+        className={styles.mobileInspector}
+        type="button"
+        onClick={onOpenInspector}
+        aria-label="Open session inspector"
+      >
+        <PanelRightOpen size={20} />
+      </button>
     </header>
   );
 }
@@ -358,13 +399,50 @@ function AmbientBackground() {
 
 export function CopilotHome() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
+  const [mobileInspectorOpen, setMobileInspectorOpen] = useState(false);
+
+  function openMobileNavigation() {
+    setMobileInspectorOpen(false);
+    setSidebarCollapsed(false);
+    setSidebarOpen(true);
+  }
+
+  function openMobileInspector() {
+    setSidebarOpen(false);
+    setRightPanelCollapsed(false);
+    setMobileInspectorOpen(true);
+  }
+
+  function toggleRightPanel() {
+    if (window.matchMedia("(max-width: 1020px)").matches) {
+      setMobileInspectorOpen(false);
+      return;
+    }
+
+    setRightPanelCollapsed((collapsed) => !collapsed);
+  }
 
   return (
-    <main className={styles.appShell}>
-      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+    <main
+      className={`${styles.appShell} ${sidebarCollapsed ? styles.sidebarIsCollapsed : ""} ${rightPanelCollapsed ? styles.rightPanelIsCollapsed : ""}`}
+    >
+      <Sidebar
+        collapsed={sidebarCollapsed}
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        onToggleCollapsed={() => setSidebarCollapsed((collapsed) => !collapsed)}
+      />
+      <button
+        className={`${styles.rightDrawerBackdrop} ${mobileInspectorOpen ? styles.rightDrawerBackdropVisible : ""}`}
+        type="button"
+        aria-label="Close session inspector"
+        onClick={() => setMobileInspectorOpen(false)}
+      />
       <section className={styles.workspace}>
         <AmbientBackground />
-        <Topbar onOpenMenu={() => setSidebarOpen(true)} />
+        <Topbar onOpenMenu={openMobileNavigation} onOpenInspector={openMobileInspector} />
 
         <div className={styles.contentLayout}>
           <section className={styles.hero} aria-labelledby="home-heading">
@@ -376,10 +454,28 @@ export function CopilotHome() {
             <PromptComposer />
           </section>
 
-          <aside className={styles.rightRail} aria-label="Copilot details">
-            <ContextCard />
-            <BenefitsCard />
-          </aside>
+          <div className={`${styles.rightRailDock} ${mobileInspectorOpen ? styles.rightRailDockMobileOpen : ""}`}>
+            <button
+              className={styles.rightRailToggle}
+              type="button"
+              onClick={toggleRightPanel}
+              aria-expanded={!rightPanelCollapsed}
+              aria-label={rightPanelCollapsed ? "Expand session inspector" : "Collapse session inspector"}
+              title={rightPanelCollapsed ? "Expand inspector" : "Collapse inspector"}
+            >
+              {mobileInspectorOpen ? (
+                <ChevronRight size={18} />
+              ) : rightPanelCollapsed ? (
+                <PanelRightOpen size={18} />
+              ) : (
+                <PanelRightClose size={18} />
+              )}
+            </button>
+            <aside className={styles.rightRail} aria-label="Copilot details">
+              <ContextCard />
+              <BenefitsCard />
+            </aside>
+          </div>
         </div>
 
         <footer className={styles.footerStatus}>
