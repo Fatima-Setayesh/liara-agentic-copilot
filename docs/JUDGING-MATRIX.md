@@ -25,13 +25,13 @@ Status vocabulary: `Foundation`, `Planned`, `In progress`, `Complete`, `Blocked`
 | Answer Quality — troubleshooting and clarification | 20 | Selective clarification and multi-step diagnostic answers grounded in retrieved material | Scenario tests for ambiguous deployment failure and sufficiently specific Next.js deployment question | Planned | Backend / Platform |
 | Answer Quality — quality evaluation | 10 | Versioned representative evaluation cases covering correctness, completeness, groundedness, and honest uncertainty | Repeatable evaluation report and reviewed failure examples | Planned | Backend / Platform |
 | **Answer Quality & Correctness subtotal** | **80** |  |  |  |  |
-| UI/UX — core chat experience | 20 | Accessible conversation surface using reusable components where they improve delivery | Working message input, streamed response, code rendering, loading, retry, and empty/error states | Planned | Frontend |
+| UI/UX — core chat experience | 20 | Accessible conversation surface using reusable components where they improve delivery | Working message input, streamed response, code rendering, loading, retry, and empty/error states | In progress | Frontend |
 | UI/UX — responsive and accessible behavior | 15 | Keyboard-first, responsive mobile/desktop layout with visible focus and semantic controls | Manual accessibility checklist, keyboard demo, and responsive screenshots/tests | Planned | Frontend |
 | UI/UX — honest lifecycle feedback | 10 | Render backend-provided activity, outcome, and interruption/retry behavior without fake progress | Demo of retrieving/generating activity and completed/cancelled/failed outcomes tied to real events | Foundation | Shared (Backend contract; Frontend presentation) |
 | UI/UX — sources, suggestions, and preferences | 10 | Traceable source UI, actionable follow-ups, and understandable personalization controls | Judge can inspect a citation, use a suggestion, and change a supported preference | Foundation | Frontend (UI); Backend / Platform (data) |
 | **UI & User Experience subtotal** | **55** |  |  |  |  |
 | Agentic — intent and clarification | 15 | Detect request intent and ask only decision-relevant clarifying questions | Scenario suite demonstrates both clarification and direct-answer paths | Planned | Backend / Platform |
-| Agentic — real workflows and activity | 15 | Orchestrate retrieval, contextual decisions, grounded generation, and next actions with event-backed states | Trace/log and UI demo correlate each displayed activity with an executed operation | Foundation | Backend / Platform |
+| Agentic — real workflows and activity | 15 | Orchestrate retrieval, contextual decisions, grounded generation, and next actions with event-backed states | Trace/log and UI demo correlate each displayed activity with an executed operation | In progress | Backend / Platform |
 | Agentic — conversation context | 10 | Persist bounded useful context; trim/summarize under a token budget | Continuation tests retain relevant framework/service facts without resending unlimited history | Planned | Backend / Platform |
 | Agentic — personalization and suggestions | 10 | Apply explicit language, experience, and answer-depth preferences; generate grounded next steps | Tests prove explicit preferences affect output and absent preferences are never invented | Foundation | Shared |
 | **Agentic Features & Personalization subtotal** | **50** |  |  |  |  |
@@ -62,5 +62,9 @@ Status vocabulary: `Foundation`, `Planned`, `In progress`, `Complete`, `Blocked`
   commands.
 - The server retrieval baseline has source-policy, normalization, chunking,
   ranking, no-result, duplicate, cancellation, and full-corpus integration tests.
-- No row claiming end-to-end grounded answers, model orchestration, persistence,
-  rate limiting, production streaming, or deployment is marked complete.
+- The backend vertical slice connects retrieval, bounded evidence context,
+  AvalAI-compatible generation, backend-owned citations, and the v1 SSE route.
+  Boundary tests are automated; the real provider and pinned full corpus have
+  also passed a local integration smoke test, but production verification remains.
+- No row claiming production-ready grounded answers, persistence, rate limiting,
+  production streaming, or deployment is marked complete.

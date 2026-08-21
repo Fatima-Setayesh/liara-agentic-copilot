@@ -42,6 +42,13 @@ export {
 } from "./rank";
 export { createInMemoryLexicalRetriever } from "./retriever";
 export {
+  RetrievalConfigurationError,
+  createRuntimeRetriever,
+  getRuntimeRetriever,
+  loadRuntimeRetrievalConfig,
+  type RuntimeRetrievalConfig,
+} from "./runtime";
+export {
   analyzeLexicalText,
   countTokenFrequencies,
   normalizeLexicalText,

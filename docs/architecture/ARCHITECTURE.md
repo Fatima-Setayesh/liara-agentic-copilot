@@ -1,7 +1,7 @@
 # Architecture
 
-Status: foundation plus retrieval baseline
-Last reviewed: 2026-08-20
+Status: first grounded chat backend vertical slice
+Last reviewed: 2026-08-21
 
 ## Goals
 
@@ -24,7 +24,7 @@ flowchart LR
     API --> Observability[Safe structured logs and metrics]
 ```
 
-The UI scaffold, protected contracts, and server-only retrieval layer exist today. Agent, provider, persistence, observability, and chat API components in the diagram remain planned boundaries, not claimed implementations.
+The UI scaffold, protected contracts, retrieval layer, AvalAI provider adapter, bounded RAG orchestration, and streamed chat route exist today. Selective clarification, persistence, rate limiting, comprehensive observability, and frontend integration remain planned.
 
 ## Deployment unit
 
@@ -78,16 +78,16 @@ Directories should be created when their first real module lands. API handlers p
 
 1. The client sends chat contract v1: latest user message, optional conversation ID, optional client request ID, and permitted user context.
 2. The API validates the body with the shared Zod schema and applies length, rate, token, and timeout policy.
-3. The agent understands intent and decides whether decision-critical clarification is required.
+3. The initial vertical slice proceeds to retrieval; selective intent/clarification logic is the next agent capability rather than a claimed implementation.
 4. For answerable Liara questions, retrieval returns a small ranked evidence set with traceable metadata.
 5. Context selection combines relevant conversation state, explicit preferences, and retrieved evidence within a token budget.
-6. The provider adapter streams a grounded answer; it does not invent source metadata.
+6. The AvalAI adapter uses its OpenAI-compatible endpoint through AI SDK 7 and streams a grounded answer; it does not invent source metadata.
 7. The server emits safe typed data parts for citations, suggestions, real activity states, and in-stream errors.
 8. Completion records latency, usage, retrieval count, outcome, and normalized error state without secrets.
 
 ## AI and agent flow
 
-The model is one component, not the source of truth or workflow owner.
+The model is one component, not the source of truth or workflow owner. The implemented path is bounded retrieval, context construction, AvalAI generation, and backend-owned citations. The intent/clarification branch below remains planned.
 
 ```text
 validated request
@@ -151,7 +151,7 @@ Persistence technology and retention policy are deferred until the conversation 
 
 ## Streaming boundary
 
-The accepted planned transport is AI SDK 7’s UI Message Stream Protocol over SSE:
+The initial chat route implements AI SDK 7’s UI Message Stream Protocol over SSE:
 
 - native text start/delta/end parts for answer content
 - persistent `data-citation` parts for authoritative source payloads
@@ -246,9 +246,9 @@ Verified source pages:
 | --- | --- | --- |
 | Deployable shape | One Next.js app | Split only for verified platform or scaling need |
 | Stream protocol | AI SDK UI Message Stream | Couples shared parts to AI SDK semantics but avoids custom protocol risk |
-| Model/provider | Deferred behind adapter | Select after quality, access, latency, and cost evaluation |
+| Model/provider | AvalAI through the AI SDK OpenAI-compatible adapter | Model ID remains environment-selected; evaluate quality, latency, and cost before fixing a demo model |
 | Retrieval index | In-memory lexical baseline | Add persistence, hybrid search, or vectors only when evaluation shows a quality/deployment benefit |
 | Database | Deferred | Select only when conversation/index persistence requirements are concrete |
 | Authentication | Deferred | Add only for a validated identity-dependent product flow |
 | Monitoring vendor | Deferred | Structured logs first; add only for measurable value |
-| Liara config | Deferred | pnpm builder and production streaming must be verified |
+| Liara config | Deferred | pnpm builder, production streaming, and availability of the pinned documentation checkout/artifact must be verified |
