@@ -31,7 +31,19 @@ import {
 } from "@/server/agent";
 import { RetrievalConfigurationError } from "@/server/retrieval";
 
-const MAX_CHAT_REQUEST_BYTES = 48_000;
+import { ChatConfigurationError } from "./config";
+import {
+  consoleChatLogger,
+  writeChatLog,
+  type ChatLogger,
+} from "./logging";
+import {
+  createRateLimitKey,
+  RateLimitExceededError,
+  type ChatRateLimiter,
+} from "./rate-limit";
+
+const MAX_CHAT_REQUEST_BYTES = 16_384;
 const SAFE_STREAM_ERROR_MESSAGE = "The chat response could not be completed.";
 
 class InvalidChatRequestError extends Error {
@@ -43,7 +55,11 @@ class InvalidChatRequestError extends Error {
 
 export interface ChatHandlerDependencies {
   readonly getService: () => GroundedChatService;
+  readonly getRateLimiter?: () => ChatRateLimiter;
+  readonly getRateLimitKey?: (request: Request) => string;
+  readonly logger?: ChatLogger;
   readonly generateId?: () => string;
+  readonly now?: () => number;
 }
 
 function errorStatus(code: ChatErrorCode): number {
@@ -68,7 +84,7 @@ function safeErrorMessage(code: ChatErrorCode): string {
     case "INVALID_INPUT":
       return "The chat request is invalid.";
     case "RATE_LIMITED":
-      return "The AI provider is temporarily rate limited. Please retry later.";
+      return "Too many chat requests were received. Please retry later.";
     case "RETRIEVAL_FAILED":
       return "Official Liara documentation retrieval is temporarily unavailable.";
     case "MODEL_UNAVAILABLE":
@@ -95,7 +111,10 @@ function chatError(
   });
 }
 
-function jsonErrorResponse(error: ChatError): Response {
+function jsonErrorResponse(
+  error: ChatError,
+  additionalHeaders: Readonly<Record<string, string>> = {},
+): Response {
   const body: ChatErrorResponse = {
     version: CHAT_CONTRACT_VERSION,
     error,
@@ -106,6 +125,7 @@ function jsonErrorResponse(error: ChatError): Response {
     headers: {
       "Cache-Control": "no-store",
       "X-Request-Id": error.requestId,
+      ...additionalHeaders,
     },
   });
 }
@@ -115,8 +135,16 @@ function preStreamError(error: unknown, requestId: string): ChatError {
     return chatError("INVALID_INPUT", requestId, false);
   }
 
+  if (error instanceof RateLimitExceededError) {
+    return chatError("RATE_LIMITED", requestId, true);
+  }
+
   if (error instanceof AIConfigurationError) {
     return chatError("MODEL_UNAVAILABLE", requestId, false);
+  }
+
+  if (error instanceof ChatConfigurationError) {
+    return chatError("INTERNAL_ERROR", requestId, false);
   }
 
   if (error instanceof RetrievalConfigurationError) {
@@ -127,17 +155,25 @@ function preStreamError(error: unknown, requestId: string): ChatError {
 }
 
 async function readRequestJson(request: Request): Promise<unknown> {
-  const contentType = request.headers.get("content-type")?.toLowerCase();
-  if (contentType?.startsWith("application/json") !== true) {
+  const contentType = request.headers
+    .get("content-type")
+    ?.split(";", 1)[0]
+    ?.trim()
+    .toLowerCase();
+  if (contentType !== "application/json") {
     throw new InvalidChatRequestError();
   }
 
-  const declaredLength = Number(request.headers.get("content-length"));
-  if (
-    Number.isFinite(declaredLength) &&
-    declaredLength > MAX_CHAT_REQUEST_BYTES
-  ) {
-    throw new InvalidChatRequestError();
+  const contentLengthHeader = request.headers.get("content-length");
+  if (contentLengthHeader !== null) {
+    const declaredLength = Number(contentLengthHeader);
+    if (
+      !Number.isSafeInteger(declaredLength) ||
+      declaredLength < 0 ||
+      declaredLength > MAX_CHAT_REQUEST_BYTES
+    ) {
+      throw new InvalidChatRequestError();
+    }
   }
 
   if (request.body === null) {
@@ -149,19 +185,28 @@ async function readRequestJson(request: Request): Promise<unknown> {
   let byteCount = 0;
   let text = "";
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
 
-    byteCount += value.byteLength;
-    if (byteCount > MAX_CHAT_REQUEST_BYTES) {
-      await reader.cancel();
-      throw new InvalidChatRequestError();
+      byteCount += value.byteLength;
+      if (byteCount > MAX_CHAT_REQUEST_BYTES) {
+        await reader.cancel();
+        throw new InvalidChatRequestError();
+      }
+      text += decoder.decode(value, { stream: true });
     }
-    text += decoder.decode(value, { stream: true });
-  }
 
-  text += decoder.decode();
+    text += decoder.decode();
+  } catch (error) {
+    if (request.signal.aborted || error instanceof InvalidChatRequestError) {
+      throw error;
+    }
+    throw new InvalidChatRequestError();
+  } finally {
+    reader.releaseLock();
+  }
 
   try {
     return JSON.parse(text) as unknown;
@@ -212,23 +257,28 @@ function writeStaticAnswer(
   writer.write({ type: "text-end", id: "answer" });
 }
 
-function logSafeFailure(requestId: string, error: ChatError): void {
-  console.error("chat_request_failed", {
-    requestId,
-    code: error.code,
-    retryable: error.retryable,
-  });
-}
-
 export function createChatPostHandler(
   dependencies: ChatHandlerDependencies,
 ): (request: Request) => Promise<Response> {
   const generateId = dependencies.generateId ?? randomUUID;
+  const getRateLimitKey = dependencies.getRateLimitKey ?? createRateLimitKey;
+  const logger = dependencies.logger ?? consoleChatLogger;
+  const now = dependencies.now ?? Date.now;
 
   return async function handleChatPost(request: Request): Promise<Response> {
+    const startedAt = now();
     let requestId = `request_${generateId()}`;
+    let startedLogged = false;
     let parsedRequest;
     let service;
+
+    const logStarted = (): void => {
+      if (startedLogged) return;
+      startedLogged = true;
+      writeChatLog(logger, { event: "chat_request_started", requestId });
+    };
+
+    const durationMs = (): number => Math.max(0, now() - startedAt);
 
     try {
       const rawBody = await readRequestJson(request);
@@ -239,11 +289,33 @@ export function createChatPostHandler(
 
       parsedRequest = parsed.data;
       requestId = parsedRequest.clientRequestId ?? requestId;
+      logStarted();
+
+      const rateLimiter = dependencies.getRateLimiter?.();
+      if (rateLimiter !== undefined) {
+        const decision = rateLimiter.check(getRateLimitKey(request));
+        if (!decision.allowed) {
+          throw new RateLimitExceededError(decision.retryAfterMs);
+        }
+      }
+
       service = dependencies.getService();
     } catch (error) {
+      logStarted();
       const safeError = preStreamError(error, requestId);
-      logSafeFailure(requestId, safeError);
-      return jsonErrorResponse(safeError);
+      writeChatLog(logger, {
+        event: "chat_request_failed",
+        requestId,
+        durationMs: durationMs(),
+        outcome: "failed",
+        errorCode: safeError.code,
+      });
+      return jsonErrorResponse(
+        safeError,
+        error instanceof RateLimitExceededError
+          ? { "Retry-After": String(error.retryAfterSeconds) }
+          : {},
+      );
     }
 
     const conversationId =
@@ -261,6 +333,7 @@ export function createChatPostHandler(
         writer.write({ type: "start", messageMetadata: metadata });
 
         try {
+          operationSignal.throwIfAborted();
           writeAgentState(writer, "understanding");
           writeAgentState(writer, "retrieving");
 
@@ -279,6 +352,12 @@ export function createChatPostHandler(
               type: "finish",
               finishReason: "stop",
               messageMetadata: metadata,
+            });
+            writeChatLog(logger, {
+              event: "chat_request_completed",
+              requestId,
+              durationMs: durationMs(),
+              outcome: "completed",
             });
             return;
           }
@@ -302,26 +381,36 @@ export function createChatPostHandler(
           });
 
           const reader = uiStream.getReader();
-          while (true) {
-            const { done, value: part } = await reader.read();
-            if (done) break;
+          try {
+            while (true) {
+              const { done, value: part } = await reader.read();
+              if (done) break;
 
-            if (part.type === "error") {
-              throw modelStreamError ?? new Error(SAFE_STREAM_ERROR_MESSAGE);
+              if (part.type === "error") {
+                throw modelStreamError ?? new Error(SAFE_STREAM_ERROR_MESSAGE);
+              }
+              if (part.type === "abort") {
+                throw new AIError(
+                  "STREAM_INTERRUPTED",
+                  "The model stream was aborted.",
+                  true,
+                );
+              }
+              writer.write(part);
             }
-            if (part.type === "abort") {
-              throw new AIError(
-                "STREAM_INTERRUPTED",
-                "The model stream was aborted.",
-                true,
-              );
-            }
-            writer.write(part);
+          } finally {
+            reader.releaseLock();
           }
 
           if (request.signal.aborted) {
             writeOutcome(writer, { status: "cancelled" });
             writer.write({ type: "abort", reason: "cancelled" });
+            writeChatLog(logger, {
+              event: "chat_request_cancelled",
+              requestId,
+              durationMs: durationMs(),
+              outcome: "cancelled",
+            });
             return;
           }
 
@@ -338,10 +427,22 @@ export function createChatPostHandler(
             finishReason: "stop",
             messageMetadata: metadata,
           });
+          writeChatLog(logger, {
+            event: "chat_request_completed",
+            requestId,
+            durationMs: durationMs(),
+            outcome: "completed",
+          });
         } catch (error) {
           if (request.signal.aborted) {
             writeOutcome(writer, { status: "cancelled" });
             writer.write({ type: "abort", reason: "cancelled" });
+            writeChatLog(logger, {
+              event: "chat_request_cancelled",
+              requestId,
+              durationMs: durationMs(),
+              outcome: "cancelled",
+            });
             return;
           }
 
@@ -360,7 +461,13 @@ export function createChatPostHandler(
             requestId,
             normalized.retryable,
           );
-          logSafeFailure(requestId, safeError);
+          writeChatLog(logger, {
+            event: "chat_request_failed",
+            requestId,
+            durationMs: durationMs(),
+            outcome: "failed",
+            errorCode: safeError.code,
+          });
           writer.write({ type: "data-error", data: safeError });
           writeOutcome(writer, { status: "failed" });
           writer.write({

@@ -186,6 +186,17 @@ export function createGroundedChatService(
             dependencies.aiConfig.requestTimeoutMs,
           ),
         },
+        onEnd: ({ usage }) => {
+          console.info({
+            component: "ai",
+            event: "ai_token_usage",
+            provider: dependencies.aiProvider.providerId,
+            model: dependencies.aiProvider.modelId,
+            inputTokens: usage.inputTokens,
+            outputTokens: usage.outputTokens,
+            totalTokens: usage.totalTokens,
+          });
+        },
       });
 
       return Object.freeze({

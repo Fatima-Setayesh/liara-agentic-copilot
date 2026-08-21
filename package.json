@@ -8,6 +8,8 @@
   },
   "scripts": {
     "dev": "next dev",
+    "prepare:docs": "node --env-file-if-exists=.env.local scripts/prepare-liara-docs.mjs",
+    "prebuild": "node --env-file-if-exists=.env.local scripts/prepare-liara-docs.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --max-warnings=0",

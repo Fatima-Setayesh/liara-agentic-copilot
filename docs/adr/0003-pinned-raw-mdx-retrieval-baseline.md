@@ -18,13 +18,16 @@ local baseline would add deployment, cost, and maintenance risk.
   or execute repository code or dynamic expressions.
 - Preserve revision, content hash, source/canonical paths, section identity, and
   conservative classification through every chunk and result.
+- Prepare an exact official checkout under `.liara-docs` during production
+  builds; allow an explicit absolute checkout override for development only.
 - Start with bounded in-memory lexical ranking and an explicit `no_matches`
   outcome. Do not add embeddings, a database, or an external retrieval service.
 
 ## Consequences
 
 The baseline is cheap, deterministic, testable, and simple to deploy, while the
-full-corpus test catches silent extraction loss. A caller must provide a checkout
-and verified revision, and a later production task must decide refresh and index
-persistence. Hybrid/vector retrieval is justified only if evaluation demonstrates
-a material quality gain worth its Liara deployment and operating costs.
+full-corpus test catches silent extraction loss. Production requires a pinned
+revision and Git during the build; each server process builds and reuses one
+in-memory index. Index persistence remains deferred. Hybrid/vector retrieval is
+justified only if evaluation demonstrates a material quality gain worth its
+Liara deployment and operating costs.
