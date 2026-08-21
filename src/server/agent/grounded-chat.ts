@@ -82,10 +82,71 @@ async function waitForRetriever(
 }
 
 function isPersian(question: string, userContext: UserContext | undefined): boolean {
-  return (
-    userContext?.preferredLanguage?.toLowerCase().startsWith("fa") === true ||
-    /[\u0600-\u06ff]/u.test(question)
-  );
+  const preferredLanguage = userContext?.preferredLanguage?.trim().toLowerCase();
+
+  if (preferredLanguage) {
+    return (
+      preferredLanguage === "fa" ||
+      preferredLanguage.startsWith("fa-") ||
+      preferredLanguage === "persian"
+    );
+  }
+
+  return /[\u0600-\u06ff]/u.test(question);
+}
+
+const GREETING_INTENTS = new Set([
+  "hello",
+  "hey",
+  "hi",
+  "good morning",
+  "good evening",
+  "\u0633\u0644\u0627\u0645",
+  "\u062f\u0631\u0648\u062f",
+  "\u0633\u0644\u0627\u0645 \u0639\u0644\u06cc\u06a9",
+]);
+
+const THANKS_INTENTS = new Set([
+  "thanks",
+  "thank you",
+  "thank you very much",
+  "\u0645\u0645\u0646\u0648\u0646",
+  "\u0645\u0631\u0633\u06cc",
+  "\u0645\u062a\u0634\u06a9\u0631\u0645",
+  "\u062e\u06cc\u0644\u06cc \u0645\u0645\u0646\u0648\u0646",
+]);
+
+function normalizeConversationIntent(value: string): string {
+  return value
+    .normalize("NFKC")
+    .toLowerCase()
+    .replaceAll("\u064a", "\u06cc")
+    .replaceAll("\u0643", "\u06a9")
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function directConversationAnswer(
+  question: string,
+  userContext: UserContext | undefined,
+): string | null {
+  const normalizedQuestion = normalizeConversationIntent(question);
+  const persian = isPersian(question, userContext);
+
+  if (GREETING_INTENTS.has(normalizedQuestion)) {
+    return persian
+      ? "\u0633\u0644\u0627\u0645! \u0686\u0637\u0648\u0631 \u0645\u06cc\u200c\u062a\u0648\u0627\u0646\u0645 \u062f\u0631\u0628\u0627\u0631\u0647\u0654 Liara \u06a9\u0645\u06a9\u062a\u0627\u0646 \u06a9\u0646\u0645\u061f"
+      : "Hello! How can I help you with Liara?";
+  }
+
+  if (THANKS_INTENTS.has(normalizedQuestion)) {
+    return persian
+      ? "\u062e\u0648\u0627\u0647\u0634 \u0645\u06cc\u200c\u06a9\u0646\u0645! \u0627\u06af\u0631 \u062f\u0631\u0628\u0627\u0631\u0647\u0654 Liara \u0633\u0624\u0627\u0644 \u062f\u06cc\u06af\u0631\u06cc \u062f\u0627\u0631\u06cc\u062f\u060c \u062f\u0631 \u062e\u062f\u0645\u062a\u0645."
+      : "You're welcome! I'm here if you have another question about Liara.";
+  }
+
+  return null;
 }
 
 function noEvidenceAnswer(
@@ -117,6 +178,21 @@ export function createGroundedChatService(
 
     async answer(input: GroundedChatInput): Promise<GroundedChatResult> {
       input.signal.throwIfAborted();
+
+      const directAnswer = directConversationAnswer(
+        input.request.message,
+        input.request.userContext,
+      );
+
+      if (directAnswer) {
+        return Object.freeze({
+          kind: "no_evidence",
+          answer: directAnswer,
+          citations: Object.freeze([]),
+          evidenceStatus: "none",
+        });
+      }
+
       let outcome: RetrievalOutcome;
 
       try {
