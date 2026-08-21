@@ -171,4 +171,6 @@ Relevant official sources:
 
 ## Security
 
-The backend validates bounded JSON requests and official citation hosts, keeps AvalAI credentials server-only, isolates retrieved text as untrusted evidence, applies request/output/context limits and timeouts, returns safe typed errors, and logs only request ID/error category on failure. Rate limiting, abuse prevention, richer redacted observability, and production validation remain required.
+The backend validates bounded JSON requests and official citation hosts, keeps AvalAI credentials server-only, isolates retrieved text as untrusted evidence, applies request/output/context limits, timeouts, and per-instance rate limiting, returns safe typed errors, and records concise structured logs. The application also disables the framework-identifying response header, adds baseline browser security headers, ignores secret files, and gives CI least-privilege access. Distributed abuse protection, richer redacted observability, and production validation remain required.
+
+<!-- contributor sync check -->
