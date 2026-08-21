@@ -1,0 +1,26 @@
+import { describe, expect, it } from "vitest";
+
+import {
+  defaultCopilotPreferences,
+  normalizeUserContext,
+  parseStoredCopilotPreferences,
+} from "./copilot-preferences-model";
+
+describe("copilot preferences", () => {
+  it("connects new sessions to the real chat API by default", () => {
+    expect(defaultCopilotPreferences.connectionMode).toBe("live");
+  });
+
+  it("accepts validated persisted preferences", () => {
+    expect(parseStoredCopilotPreferences(JSON.stringify(defaultCopilotPreferences))).toEqual(defaultCopilotPreferences);
+  });
+
+  it("rejects malformed or unknown preference data", () => {
+    expect(parseStoredCopilotPreferences('{"connectionMode":"unsafe"}')).toBeNull();
+    expect(parseStoredCopilotPreferences("not-json")).toBeNull();
+  });
+
+  it("removes blank optional context fields", () => {
+    expect(normalizeUserContext({ framework: "", answerDepth: "concise" })).toEqual({ answerDepth: "concise" });
+  });
+});

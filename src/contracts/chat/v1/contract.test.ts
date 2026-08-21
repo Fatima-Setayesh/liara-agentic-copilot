@@ -3,8 +3,11 @@ import { describe, expect, it } from "vitest";
 import {
   AGENT_STATES,
   CHAT_ERROR_CODES,
+  CHAT_OUTCOME_STATUSES,
+  EVIDENCE_STATUSES,
   MAX_CHAT_MESSAGE_CHARACTERS,
   chatRequestSchema,
+  chatOutcomeSchema,
   citationSchema,
 } from "./index";
 
@@ -65,22 +68,59 @@ describe("chat contract v1", () => {
     expect(untrusted.success).toBe(false);
   });
 
-  it("keeps agent states and safe error codes stable", () => {
+  it("keeps activity, outcome, evidence, and error vocabularies stable", () => {
     expect(AGENT_STATES).toEqual([
       "understanding",
       "clarification_required",
       "retrieving",
       "generating",
+    ]);
+    expect(CHAT_OUTCOME_STATUSES).toEqual([
       "completed",
+      "cancelled",
       "failed",
     ]);
+    expect(EVIDENCE_STATUSES).toEqual(["sufficient", "partial", "none"]);
     expect(CHAT_ERROR_CODES).toEqual([
       "RATE_LIMITED",
       "INVALID_INPUT",
       "RETRIEVAL_FAILED",
       "MODEL_UNAVAILABLE",
       "STREAM_INTERRUPTED",
+      "TIMEOUT",
       "INTERNAL_ERROR",
     ]);
+  });
+
+  it.each(EVIDENCE_STATUSES)(
+    "accepts a completed outcome with %s evidence",
+    (evidenceStatus) => {
+      const result = chatOutcomeSchema.safeParse({
+        status: "completed",
+        evidenceStatus,
+      });
+
+      expect(result.success).toBe(true);
+    },
+  );
+
+  it("requires evidence status for every completed outcome", () => {
+    const result = chatOutcomeSchema.safeParse({ status: "completed" });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("represents user cancellation without an application error", () => {
+    const cancelled = chatOutcomeSchema.safeParse({ status: "cancelled" });
+    const cancellationWithError = chatOutcomeSchema.safeParse({
+      status: "cancelled",
+      error: {
+        code: "STREAM_INTERRUPTED",
+        message: "The user stopped the request.",
+      },
+    });
+
+    expect(cancelled.success).toBe(true);
+    expect(cancellationWithError.success).toBe(false);
   });
 });

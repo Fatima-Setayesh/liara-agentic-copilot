@@ -23,6 +23,19 @@ Primary knowledge sources:
 
 Never fabricate a Liara command, configuration, price, service behavior, source, or deployment instruction. Frontend code must never manufacture source metadata.
 
+## Decision priorities
+
+The 300-point judging rubric is the product priority order:
+
+1. Answer Quality & Correctness — 80
+2. UI & User Experience — 55
+3. Agentic Features & Personalization — 50
+4. Security, Reliability & Monitoring — 50
+5. Liara Deployment — 40
+6. Cost Optimization — 25
+
+Every significant technical decision must improve scoring evidence, maintainability, security, reliability, parallel team delivery, or Liara deployability. Prefer the simplest professional implementation that meets the requirement. Documentation, infrastructure, dependency, or tooling work without a concrete product outcome is not progress.
+
 ## Architecture
 
 The initial architecture is one deployable Next.js App Router application with strict internal boundaries:
@@ -118,8 +131,9 @@ Before a merge, branch deletion, rebase/history rewrite, or deployment, identify
 - Use Node.js 24.x unless an approved deployment decision changes it.
 - Do not silently install a major architectural dependency such as a database, ORM, Redis, vector store, queue, auth provider, monitoring SaaS, separate backend framework, or second UI library.
 - Before proposing such a dependency, explain purpose, alternatives, Liara deployment impact, cost, and maintenance burden.
-- shadcn/ui is the UI primitive foundation. Check its installed project skill and registry before inventing a duplicate primitive.
-- AI Elements components are added only for a real frontend feature, not speculatively.
+- shadcn/ui, AI Elements, and their coding skills are optional frontend accelerators, not architecture or judging requirements.
+- Use optional UI tooling only for a concrete frontend-owned feature where it saves time or improves quality. Do not browse catalogs, add components, or install related dependencies speculatively.
+- When Fatima chooses an existing project primitive, reuse it instead of creating a duplicate. Backend and shared-contract design must remain independent of optional UI tooling.
 
 ## Code standards
 
@@ -191,3 +205,13 @@ After a task, report:
 - known limitations and exactly one recommended next task when requested
 
 Always state whether anything was pushed or deployed.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

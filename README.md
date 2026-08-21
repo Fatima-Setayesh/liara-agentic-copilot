@@ -4,16 +4,18 @@ A production-minded, grounded developer and troubleshooting copilot for Liara. T
 
 ## Current status
 
-**Foundation only.** The repository currently includes:
+**Integrated grounded chat vertical slice.** The repository currently includes:
 
-- a minimal Next.js App Router scaffold
-- strict TypeScript, Tailwind CSS, and a Radix-based shadcn/ui foundation
-- Vercel AI SDK and AI Elements conventions without a chat implementation
+- a responsive product chat UI connected to the real API by default, with an optional preview mode
+- strict TypeScript and Tailwind CSS with a minimal optional shadcn-compatible scaffold
+- an AvalAI OpenAI-compatible provider adapter built on Vercel AI SDK 7
 - versioned runtime-validated chat contracts and contract tests
+- server-only ingestion, structural MDX normalization, section-aware chunking,
+  source policy, and an in-memory lexical retriever for the official Liara corpus
+- bounded evidence-context construction, backend-owned citations, honest no-evidence handling, and a streamed `POST /api/chat` route
 - architecture, governance, rubric tracking, and lightweight CI
-- official repo-scoped shadcn and AI Elements agent skills
 
-The chat API, model provider, RAG pipeline, persistence, rate limiting, monitoring, deployment configuration, and product UI are **planned, not implemented**.
+The route has automated provider/retrieval boundary coverage and has been validated locally against a configured AvalAI model and a clean, revision-pinned official Liara documentation checkout. Selective clarification, durable conversation persistence, rate limiting, full monitoring, and production deployment remain **planned**.
 
 ## Architecture summary
 
@@ -27,10 +29,10 @@ product UI -> versioned chat/API boundary -> server orchestration
                                             `- citations and next actions
 ```
 
-- `src/app/`: App Router pages and future API boundaries
+- `src/app/`: App Router pages and thin API boundaries
 - `src/contracts/`: shared, versioned, protected request/stream/error contracts
-- `src/server/`: future server-only domain and infrastructure modules
-- `src/components/` and `src/features/`: frontend-owned UI implementation when added
+- `src/server/`: server-only retrieval, AI provider, grounded orchestration, and chat transport
+- `src/components/` and `src/features/`: frontend-owned product UI and chat API integration
 
 See [the architecture document](docs/architecture/ARCHITECTURE.md) and [product specification](SPEC.md).
 
@@ -41,12 +43,13 @@ See [the architecture document](docs/architecture/ARCHITECTURE.md) and [product 
 - Next.js 16 App Router
 - React 19 and TypeScript 5 in strict mode
 - Tailwind CSS 4
-- shadcn/ui 4 with the Radix base
-- Vercel AI SDK 7 and `@ai-sdk/react` 4
+- Vercel AI SDK 7 for typed streaming and shared message contracts
+- the AI SDK OpenAI-compatible provider for AvalAI
 - Zod 4 for trust-boundary schemas
+- unified/remark for non-executing structural MDX parsing
 - Vitest 4 for focused unit tests
 
-AI Elements prerequisites are installed, but no unused AI Elements components are checked in.
+The checked-in Radix-based shadcn configuration and base stylesheet are replaceable frontend scaffold details, not scoring requirements or architecture drivers. Repo-scoped UI skills are development-only aids and do not ship in the application bundle. No shadcn or AI Elements component is checked in; Fatima can add only the components justified by real UI work.
 
 ## Local setup
 
@@ -70,7 +73,9 @@ On Windows systems where PowerShell blocks the `pnpm.ps1` shim, use `pnpm.cmd` o
 
 ## Environment
 
-`.env.example` separates browser-safe values from server-only configuration. Its values are placeholders. No model call is made by the current foundation.
+`.env.example` separates browser-safe values from server-only configuration. Its values are placeholders. Local chat execution requires an AvalAI API key/model and a full official docs revision. Use an existing absolute, clean checkout through `LIARA_DOCS_REPOSITORY_PATH`, or run `pnpm prepare:docs` to create the default checkout.
+
+The backend reads `AVALAI_API_KEY`, `AVALAI_BASE_URL`, `AVALAI_MODEL`, bounded AI settings, and `LIARA_DOCS_REVISION`. `LIARA_DOCS_REPOSITORY_PATH` is an optional absolute development override; production builds prepare the pinned official checkout in `.liara-docs`. `AVALAI_API_KEY` is not a Liara management API key.
 
 Rules:
 
@@ -84,6 +89,7 @@ Rules:
 | Command | Purpose |
 | --- | --- |
 | `pnpm dev` | Start the local Next.js development server |
+| `pnpm prepare:docs` | Verify a configured checkout or fetch the pinned official docs into `.liara-docs` |
 | `pnpm lint` | Run ESLint with zero warnings allowed |
 | `pnpm typecheck` | Run strict TypeScript checking without emitting files |
 | `pnpm test` | Run the Vitest suite once |
@@ -100,10 +106,11 @@ The protected v1 contract lives in [`src/contracts/chat/v1`](src/contracts/chat/
 - official Liara source/citation metadata
 - structured suggestions
 - real agent activity states
+- terminal outcomes with evidence sufficiency and non-error cancellation
 - safe stable error codes
 - runtime input and official-source validation
 
-The planned transport is AI SDK 7’s UI Message Stream Protocol over SSE. The API route is not implemented yet. Contract changes require coordination between both owners and integration validation.
+`POST /api/chat` implements AI SDK 7’s UI Message Stream Protocol over SSE. It emits real activity states, backend-created citations, streamed text, typed failures, and terminal evidence outcomes. Contract changes require coordination between both owners and integration validation.
 
 ## Branch workflow
 
@@ -139,7 +146,9 @@ Liara-specific answers must prefer:
 - [Published Liara documentation](https://docs.liara.ir/)
 - [Official Liara documentation repository](https://github.com/liara-cloud/docs)
 
-The future ingestion pipeline must preserve canonical URL, repository path, page and section title, category, chunk identity/order, and source revision. If official evidence is insufficient, the assistant must say so.
+The implemented retrieval baseline reads `src/pages/**/*.mdx` from the official repository at a required full Git revision. Production prepares that immutable checkout once during build; each server process builds and reuses one in-memory lexical index. It preserves canonical URL, revision-pinned repository URL, repository path, page/section identity, conservative category metadata, content hash, and chunk identity/order. It parses MDX structurally without compiling or executing it, and represents an empty or irrelevant query as `no_matches` rather than a backend failure.
+
+The generated `public/llms` Markdown is not the authoritative input: audit fixtures showed dropped table cells and corrupted code. Refreshing requires an intentional revision change and a new build; a persisted index remains deferred. If official evidence is insufficient, the assistant says so.
 
 ## Liara deployment
 
@@ -162,4 +171,4 @@ Relevant official sources:
 
 ## Security
 
-The foundation validates contract inputs and official citation hosts, disables the framework-identifying response header, adds baseline browser security headers, ignores secret files, and gives CI least-privilege access. Rate limiting, abuse prevention, provider timeouts, logging redaction, and operational monitoring remain required before production.
+The backend validates bounded JSON requests and official citation hosts, keeps AvalAI credentials server-only, isolates retrieved text as untrusted evidence, applies request/output/context limits and timeouts, returns safe typed errors, and logs only request ID/error category on failure. Rate limiting, abuse prevention, richer redacted observability, and production validation remain required.

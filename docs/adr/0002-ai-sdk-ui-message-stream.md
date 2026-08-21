@@ -16,10 +16,13 @@ Map v1 content as follows:
 - answer: native text parts
 - source/citation: persistent `data-citation`
 - suggested next actions: persistent `data-suggestions`
-- real workflow transition: transient `data-agent-state`
-- anticipated post-header failure: safe `data-error`
+- real non-terminal workflow transition: transient `data-agent-state`
+- terminal result: persistent `data-outcome`
+- anticipated post-header failure: safe `data-error` followed by a `failed` outcome
 - pre-stream failure: JSON `ChatErrorResponse` with an appropriate HTTP status
-- success: native finish and `completed`
+- success: native finish and a `completed` outcome
+
+A completed outcome always includes `evidenceStatus`: `sufficient`, `partial`, or `none`. `none` represents an honest response that reliable documentation evidence was unavailable; it is not `RETRIEVAL_FAILED`. A deliberate user stop is `cancelled` and does not emit an application error. `STREAM_INTERRUPTED` is reserved for an unexpected interruption, while `TIMEOUT` supports distinct retry and UX behavior.
 
 Do not send reasoning parts. Do not use deprecated AI SDK result-instance response helpers. The client sends `ChatRequest` v1 rather than unbounded UI history.
 
@@ -32,7 +35,7 @@ Benefits:
 - official, typed client/server lifecycle
 - structured metadata without string parsing
 - standard cancellation and stream handling
-- direct fit with AI Elements and current AI SDK APIs
+- direct fit with typed frontend consumers and current AI SDK APIs
 
 Costs:
 
