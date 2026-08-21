@@ -1,6 +1,6 @@
 # Architecture
 
-Status: foundation baseline
+Status: foundation plus retrieval baseline
 Last reviewed: 2026-08-20
 
 ## Goals
@@ -24,7 +24,7 @@ flowchart LR
     API --> Observability[Safe structured logs and metrics]
 ```
 
-Only the UI scaffold and protected contracts exist today. Server components in the diagram are planned boundaries, not claimed implementations.
+The UI scaffold, protected contracts, and server-only retrieval layer exist today. Agent, provider, persistence, observability, and chat API components in the diagram remain planned boundaries, not claimed implementations.
 
 ## Deployment unit
 
@@ -45,12 +45,12 @@ See [ADR-0001](../adr/0001-single-nextjs-application.md).
 | Area | Responsibility | Owner |
 | --- | --- | --- |
 | `src/app/(product)/` and visible page composition | Product routes and UX | Frontend / Fatima |
-| `src/components/`, `src/features/`, `src/styles/` | UI primitives, AI Elements, visible features, accessibility | Frontend / Fatima |
+| `src/components/`, `src/features/`, `src/styles/` | UI primitives, visible features, accessibility | Frontend / Fatima |
 | `src/app/api/` | Thin HTTP/stream boundaries | Backend/platform |
 | `src/server/` | Orchestration, retrieval, providers, context, security, observability, cost, persistence | Backend/platform |
 | `src/contracts/` | Runtime schemas and shared types | Shared and protected |
 | root configs, CI, deployment files | Architecture and platform | Backend/platform; coordinate breaking changes |
-| `components.json` | shadcn generation contract | Shared and protected |
+| `components.json` | Optional frontend component-generation configuration | Shared and protected |
 
 The foundation page is intentionally minimal. Backend work must not redesign the visible product, and frontend work must not construct citations or move server policy into browser code.
 
@@ -108,20 +108,20 @@ No hidden chain-of-thought is requested or transmitted. `reasoning` and `executi
 
 The primary corpus is the official [`liara-cloud/docs`](https://github.com/liara-cloud/docs) repository, with published canonical pages at [`docs.liara.ir`](https://docs.liara.ir/).
 
-The source repository primarily stores content in `src/pages/**/*.mdx`. A future ingestion pipeline should:
+The implemented baseline:
 
-1. fetch a pinned official revision
-2. parse MDX structurally rather than treating JSX boilerplate as prose
-3. retain prose, warnings, tab labels/content, commands, headings, and section IDs
-4. derive candidate published routes by removing `src/pages/` and `.mdx`
-5. validate canonical URLs against the official sitemap
-6. chunk along page and section boundaries with overlap only where measured useful
-7. store source revision/content hash, page and section identity, language, category, and chunk order
-8. build a retrieval index appropriate to measured corpus size and quality needs
+1. loads `src/pages/**/*.mdx` from an explicit local checkout and records a caller-supplied full Git revision
+2. validates paths, hashes, size limits, symlinks, cancellation, and the official category allowlist
+3. parses MDX structurally without compiling or executing JSX/expressions
+4. retains static prose, warnings, tabs, steps, tables, FAQ answers, commands, headings, and section IDs
+5. maps source paths deterministically to canonical trailing-slash `docs.liara.ir` URLs and revision-pinned repository URLs
+6. chunks on section/block boundaries, preserving code blocks and bounded prose overlap
+7. ranks a bounded in-memory index with Persian/technical lexical normalization, BM25-like scoring, metadata boosts, filters, and conservative duplicate suppression
+8. returns a typed `no_matches` outcome when evidence is absent; this is distinct from ingestion/retrieval failure
 
-The official repository already contains `indexer/` and `sitemap/` areas; inspect and reuse them where appropriate before building a duplicate crawler.
+The generated `public/llms` Markdown is not authoritative because corpus audit found lost table rows, corrupted JSX/code, and generated content for an empty source page. The raw MDX at a pinned revision remains the source of truth. A full-corpus integration test covers all 1,142 audited files and checks known loss-prone evidence.
 
-No vector database or embedding provider has been selected. The next retrieval task must benchmark a low-complexity lexical baseline and inspect the corpus before justifying storage infrastructure.
+No vector database or embedding provider is selected. The in-memory lexical baseline avoids network calls, per-query model cost, and deployment dependencies; measure its quality against an evaluation set before proposing hybrid/vector retrieval or a persisted index.
 
 ## Citation flow
 
@@ -156,12 +156,13 @@ The accepted planned transport is AI SDK 7’s UI Message Stream Protocol over S
 - native text start/delta/end parts for answer content
 - persistent `data-citation` parts for authoritative source payloads
 - persistent `data-suggestions` for next actions
-- transient `data-agent-state` for real state transitions
-- `data-error` for anticipated failures after headers are committed
+- transient `data-agent-state` for real non-terminal activity
+- persistent `data-outcome` for `completed`, `cancelled`, or `failed`
+- `data-error` for anticipated failures after headers are committed, followed by a `failed` outcome
 - structured JSON errors for failures before streaming starts
-- native finish plus final `completed` state for successful answers
+- native finish plus a `completed` outcome carrying `sufficient`, `partial`, or `none` evidence status
 
-Client cancellation uses `useChat().stop()`. Request abort signals must propagate through retrieval and `streamText`; server stream consumption/finalization must still run. Resume support is deferred because resumable streams conflict with abort semantics. Reasoning transmission remains disabled.
+Client cancellation uses `useChat().stop()` and resolves as `cancelled`, not as `data-error`. Request abort signals must propagate through retrieval and `streamText`; server stream consumption/finalization must still run. `STREAM_INTERRUPTED` is reserved for unexpected interruption, and `TIMEOUT` remains a distinct retryable error category. Resume support is deferred because resumable streams conflict with abort semantics. Reasoning transmission remains disabled.
 
 See [ADR-0002](../adr/0002-ai-sdk-ui-message-stream.md).
 
@@ -215,14 +216,21 @@ Answer quality and citation correctness are hard constraints; negligible savings
 - CLI, console, and GitHub deployment paths
 - health-check-gated traffic promotion
 
-This project targets Node 24 locally and in CI. No `liara.json` is committed yet because the current official Next.js page explicitly describes dependency installation with `npm install`, which conflicts with the non-negotiable pnpm-only lockfile policy. Before deployment configuration:
+This project targets Node 24 locally and in CI. No `liara.json` is committed yet because the current official Next.js page explicitly describes dependency installation with `npm install`, which conflicts with the non-negotiable pnpm-only lockfile policy.
 
-1. verify whether the current Liara Next builder honors `packageManager` and `pnpm-lock.yaml`
-2. verify exact install/build/start behavior using a disposable deployment
-3. confirm port/host behavior
-4. validate AI SDK SSE chunking, buffering, timeout, cancellation, and disconnect cleanup
-5. add a cheap health endpoint and command
-6. configure secrets through protected Liara variables, never committed `envs`
+**Early production milestone:** immediately after the first real end-to-end chat vertical slice, perform an explicitly authorized Liara deployment. Do not defer it until the final demo. It must verify:
+
+1. pnpm lockfile and package-manager compatibility
+2. Next.js build and start behavior
+3. Node runtime compatibility
+4. environment variables
+5. streaming behavior
+6. buffering
+7. timeout behavior
+8. cancellation and disconnect handling
+9. production logs
+
+A cheap health check remains required before production readiness. Configure secrets through protected Liara variables, never committed `envs`.
 
 Deployment and those external changes require explicit user authorization.
 
@@ -237,10 +245,9 @@ Verified source pages:
 | Decision | Current choice | Tradeoff / trigger to revisit |
 | --- | --- | --- |
 | Deployable shape | One Next.js app | Split only for verified platform or scaling need |
-| UI base | shadcn Radix + neutral Nova scaffold | Radix chosen for current AI Elements compatibility; frontend owns later visual tokens |
 | Stream protocol | AI SDK UI Message Stream | Couples shared parts to AI SDK semantics but avoids custom protocol risk |
 | Model/provider | Deferred behind adapter | Select after quality, access, latency, and cost evaluation |
-| Retrieval index | Deferred | Benchmark corpus and lexical baseline before vector infrastructure |
+| Retrieval index | In-memory lexical baseline | Add persistence, hybrid search, or vectors only when evaluation shows a quality/deployment benefit |
 | Database | Deferred | Select only when conversation/index persistence requirements are concrete |
 | Authentication | Deferred | Add only for a validated identity-dependent product flow |
 | Monitoring vendor | Deferred | Structured logs first; add only for measurable value |

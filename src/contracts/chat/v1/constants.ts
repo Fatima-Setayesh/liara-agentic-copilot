@@ -11,7 +11,13 @@ export const AGENT_STATES = [
   "clarification_required",
   "retrieving",
   "generating",
+] as const;
+
+export const EVIDENCE_STATUSES = ["sufficient", "partial", "none"] as const;
+
+export const CHAT_OUTCOME_STATUSES = [
   "completed",
+  "cancelled",
   "failed",
 ] as const;
 
@@ -21,5 +27,6 @@ export const CHAT_ERROR_CODES = [
   "RETRIEVAL_FAILED",
   "MODEL_UNAVAILABLE",
   "STREAM_INTERRUPTED",
+  "TIMEOUT",
   "INTERNAL_ERROR",
 ] as const;
