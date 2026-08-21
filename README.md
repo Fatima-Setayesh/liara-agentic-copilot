@@ -163,3 +163,6 @@ Relevant official sources:
 ## Security
 
 The foundation validates contract inputs and official citation hosts, disables the framework-identifying response header, adds baseline browser security headers, ignores secret files, and gives CI least-privilege access. Rate limiting, abuse prevention, provider timeouts, logging redaction, and operational monitoring remain required before production.
+
+
+<!-- contributor sync check -->
