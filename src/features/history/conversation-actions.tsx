@@ -73,7 +73,7 @@ export function ConversationActions({
         : event.key === "ArrowDown"
           ? (currentIndex + 1 + items.length) % items.length
           : (currentIndex - 1 + items.length) % items.length;
-    items[nextIndex].focus();
+    items[nextIndex]?.focus();
   }
 
   function runAction(action: () => void) {

@@ -122,7 +122,7 @@ describe("AiResponseCard", () => {
         citations={[citation]}
         projectEvidence={projectEvidence}
         presentation={response}
-        agentState="completed"
+        outcomeStatus="completed"
         lifecycle={{ phase: "complete", progress: 1, activeStep: 4 }}
         onSuggestedPrompt={vi.fn()}
       />,
@@ -146,7 +146,7 @@ describe("AiResponseCard", () => {
         timestamp="2026-08-20T12:00:00.000Z"
         citations={[]}
         presentation={response}
-        agentState="completed"
+        outcomeStatus="completed"
         lifecycle={{ phase: "complete", progress: 1, activeStep: 4 }}
         onSuggestedPrompt={vi.fn()}
       />,

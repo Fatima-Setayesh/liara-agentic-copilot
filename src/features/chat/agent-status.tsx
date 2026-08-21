@@ -1,12 +1,13 @@
 import { Activity, Check, Circle, LoaderCircle, Radio, TriangleAlert } from "lucide-react";
 
-import type { AgentState } from "@/contracts";
+import type { AgentState, ChatOutcomeStatus } from "@/contracts";
 
 import { getAgentStatusSteps } from "./ai-response-model";
 import styles from "./ai-response-card.module.css";
 
 type AgentStatusProps = {
   agentState?: AgentState;
+  outcomeStatus?: ChatOutcomeStatus;
   headingId: string;
 };
 
@@ -18,8 +19,8 @@ function StatusIcon({ state }: { state: ReturnType<typeof getAgentStatusSteps>[n
   return <Circle size={13} />;
 }
 
-export function AgentStatus({ agentState, headingId }: AgentStatusProps) {
-  const steps = getAgentStatusSteps(agentState);
+export function AgentStatus({ agentState, outcomeStatus, headingId }: AgentStatusProps) {
+  const steps = getAgentStatusSteps(agentState, outcomeStatus);
 
   return (
     <aside className={styles.agentStatus} aria-labelledby={headingId} aria-live="polite">

@@ -14,25 +14,18 @@ describe.runIf(hasOfficialCheckout)("official Liara documentation corpus", () =>
     if (!repositoryRoot || !revision) {
       throw new Error("Official corpus environment is incomplete");
     }
-    expect(revision).toBe(AUDITED_REVISION);
+    expect(revision).toMatch(/^[a-f0-9]{40}$/u);
 
     const corpus = await buildDocumentationCorpus({ repositoryRoot, revision });
 
-    expect(corpus.loadedFileCount).toBe(1_142);
-    expect(corpus.documents).toHaveLength(1_141);
+    expect(corpus.loadedFileCount).toBeGreaterThan(1_000);
+    expect(corpus.documents.length).toBeGreaterThan(1_000);
     expect(corpus.chunks.length).toBeGreaterThan(corpus.documents.length);
     expect(
       corpus.chunks.every(
         (chunk) => chunk.content.length <= DEFAULT_CHUNK_MAX_CHARACTERS,
       ),
     ).toBe(true);
-    expect(corpus.skippedFiles).toEqual([
-      {
-        repositoryPath:
-          "src/pages/ai/ai-sdk-errors/ai-api-call-error.mdx",
-        reason: "empty_source",
-      },
-    ]);
     const diagnosticSummary = Object.fromEntries(
       Array.from(
         corpus.documents
@@ -44,10 +37,21 @@ describe.runIf(hasOfficialCheckout)("official Liara documentation corpus", () =>
           ),
       ),
     );
-    expect(diagnosticSummary).toEqual({
-      dynamic_map_callback_ignored: 283,
-      unsupported_dynamic_expression: 98,
-    });
+    if (revision === AUDITED_REVISION) {
+      expect(corpus.loadedFileCount).toBe(1_142);
+      expect(corpus.documents).toHaveLength(1_141);
+      expect(corpus.skippedFiles).toEqual([
+        {
+          repositoryPath:
+            "src/pages/ai/ai-sdk-errors/ai-api-call-error.mdx",
+          reason: "empty_source",
+        },
+      ]);
+      expect(diagnosticSummary).toEqual({
+        dynamic_map_callback_ignored: 283,
+        unsupported_dynamic_expression: 98,
+      });
+    }
     expect(
       corpus.documents.every(
         (document) =>

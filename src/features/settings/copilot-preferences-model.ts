@@ -13,7 +13,7 @@ export type CopilotPreferences = z.infer<typeof copilotPreferencesSchema>;
 
 export const defaultCopilotPreferences: CopilotPreferences = {
   userContext: { answerDepth: "detailed" },
-  connectionMode: "preview",
+  connectionMode: "live",
   sendOnEnter: true,
 };
 

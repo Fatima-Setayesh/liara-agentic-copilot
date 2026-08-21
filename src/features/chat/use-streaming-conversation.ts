@@ -84,7 +84,7 @@ export function useStreamingConversation() {
           window.clearInterval(streamHandle);
           scheduledHandles.current.delete(streamHandle);
           updateEntry(entryId, {
-            agentState: "completed",
+            outcomeStatus: "completed",
             lifecycle: { phase: "complete", progress: 1, activeStep: 4 },
           });
           return;
@@ -108,7 +108,16 @@ export function useStreamingConversation() {
     clearScheduledWork();
     setChatEntries((entries) => entries.map((entry, index) => (
       index === entries.length - 1 && entry.lifecycle?.phase !== "complete"
-        ? { ...entry, agentState: undefined, cancelled: true, lifecycle: { phase: "complete", progress: 1, activeStep: entry.lifecycle?.activeStep ?? 0 } }
+        ? {
+            ...entry,
+            outcomeStatus: "cancelled",
+            cancelled: true,
+            lifecycle: {
+              phase: "complete",
+              progress: 1,
+              activeStep: entry.lifecycle?.activeStep ?? 0,
+            },
+          }
         : entry
     )));
   }, [clearScheduledWork]);

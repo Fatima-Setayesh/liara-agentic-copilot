@@ -1,4 +1,4 @@
-import type { AgentState } from "@/contracts";
+import type { AgentState, ChatOutcomeStatus } from "@/contracts";
 
 import type { CodeLine } from "./professional-code-block";
 
@@ -113,7 +113,37 @@ const pendingSteps: AgentStatusStep[] = [
   { label: "Response ready", detail: "Pending", state: "pending" },
 ];
 
-export function getAgentStatusSteps(agentState?: AgentState): AgentStatusStep[] {
+export function getAgentStatusSteps(
+  agentState?: AgentState,
+  outcomeStatus?: ChatOutcomeStatus,
+): AgentStatusStep[] {
+  if (outcomeStatus === "completed") {
+    return [
+      { label: "Understanding your request", detail: "Completed", state: "complete" },
+      { label: "Searching official Liara sources", detail: "Completed", state: "complete" },
+      { label: "Preparing grounded answer", detail: "Completed", state: "complete" },
+      { label: "Response ready", detail: "Completed", state: "complete" },
+    ];
+  }
+
+  if (outcomeStatus === "failed") {
+    return [
+      { label: "Request processing", detail: "Stopped safely", state: "failed" },
+      { label: "Searching official Liara sources", detail: "Not completed", state: "pending" },
+      { label: "Preparing grounded answer", detail: "Not completed", state: "pending" },
+      { label: "Retry available", detail: "Choose an action below", state: "waiting" },
+    ];
+  }
+
+  if (outcomeStatus === "cancelled") {
+    return [
+      { label: "Request processing", detail: "Cancelled", state: "waiting" },
+      { label: "Searching official Liara sources", detail: "Stopped", state: "pending" },
+      { label: "Preparing grounded answer", detail: "Stopped", state: "pending" },
+      { label: "Response ready", detail: "Not generated", state: "pending" },
+    ];
+  }
+
   switch (agentState) {
     case "understanding":
       return [
@@ -142,20 +172,6 @@ export function getAgentStatusSteps(agentState?: AgentState): AgentStatusStep[] 
         { label: "Searching official Liara sources", detail: "Completed", state: "complete" },
         { label: "Preparing grounded answer", detail: "In progress", state: "working" },
         { label: "Response ready", detail: "Pending", state: "pending" },
-      ];
-    case "completed":
-      return [
-        { label: "Understanding your request", detail: "Completed", state: "complete" },
-        { label: "Searching official Liara sources", detail: "Completed", state: "complete" },
-        { label: "Preparing grounded answer", detail: "Completed", state: "complete" },
-        { label: "Response ready", detail: "Completed", state: "complete" },
-      ];
-    case "failed":
-      return [
-        { label: "Request processing", detail: "Stopped safely", state: "failed" },
-        { label: "Searching official Liara sources", detail: "Not completed", state: "pending" },
-        { label: "Preparing grounded answer", detail: "Not completed", state: "pending" },
-        { label: "Retry available", detail: "Choose an action below", state: "waiting" },
       ];
     default:
       return pendingSteps;

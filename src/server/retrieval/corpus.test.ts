@@ -1,12 +1,15 @@
+import { execFile } from "node:child_process";
 import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { promisify } from "node:util";
 
 import { afterEach, describe, expect, it } from "vitest";
 
 import { buildDocumentationCorpus } from "./corpus";
 
-const REVISION = "31f2ef7adce565341d7eba43492ef5b4f63a7d73";
+const executeFile = promisify(execFile);
+const PLACEHOLDER_REVISION = "0000000000000000000000000000000000000000";
 const temporaryRoots: string[] = [];
 
 async function temporaryRepository(): Promise<string> {
@@ -16,6 +19,26 @@ async function temporaryRepository(): Promise<string> {
     recursive: true,
   });
   return root;
+}
+
+async function commitRepository(root: string): Promise<string> {
+  const runGit = async (...arguments_: readonly string[]): Promise<string> => {
+    const result = await executeFile("git", arguments_, {
+      cwd: root,
+      encoding: "utf8",
+      windowsHide: true,
+    });
+
+    return result.stdout;
+  };
+
+  await runGit("init", "--quiet");
+  await runGit("config", "user.name", "Liara retrieval test");
+  await runGit("config", "user.email", "retrieval-test@example.invalid");
+  await runGit("add", "--all");
+  await runGit("commit", "--quiet", "--message", "test corpus");
+
+  return (await runGit("rev-parse", "HEAD")).trim();
 }
 
 afterEach(async () => {
@@ -37,10 +60,11 @@ describe("buildDocumentationCorpus", () => {
       "",
       "utf8",
     );
+    const revision = await commitRepository(root);
 
     const corpus = await buildDocumentationCorpus({
       repositoryRoot: root,
-      revision: REVISION,
+      revision,
     });
 
     expect(corpus.loadedFileCount).toBe(2);
@@ -58,7 +82,7 @@ describe("buildDocumentationCorpus", () => {
       anchor: "deploy",
       content: "```bash\nliara deploy\n```",
     });
-    expect(corpus.chunks[1]?.source.repositoryUrl).toContain(`/blob/${REVISION}/`);
+    expect(corpus.chunks[1]?.source.repositoryUrl).toContain(`/blob/${revision}/`);
   });
 
   it("honors cancellation before normalization work continues", async () => {
@@ -74,7 +98,7 @@ describe("buildDocumentationCorpus", () => {
     await expect(
       buildDocumentationCorpus({
         repositoryRoot: root,
-        revision: REVISION,
+        revision: PLACEHOLDER_REVISION,
         signal: controller.signal,
       }),
     ).rejects.toThrowError(/cancelled/u);

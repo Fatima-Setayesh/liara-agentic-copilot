@@ -54,7 +54,10 @@ export function SourcesSection({ citations, projectEvidence }: SourcesSectionPro
         inert={!expanded}
       >
         <div className={styles.sourcesCollapseInner}>
-          <GroundingBadgeRow citations={citations} projectEvidence={projectEvidence} />
+          <GroundingBadgeRow
+            citations={citations}
+            {...(projectEvidence ? { projectEvidence } : {})}
+          />
 
           {sourceItems.length === 0 ? (
             <div className={styles.emptySources}>

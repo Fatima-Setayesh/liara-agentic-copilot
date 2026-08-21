@@ -8,6 +8,7 @@ import {
   agentStateEventSchema,
   chatErrorSchema,
   chatMessageMetadataSchema,
+  chatOutcomeSchema,
   citationSchema,
   suggestionsPayloadSchema,
   CHAT_API_PATH,
@@ -15,6 +16,7 @@ import {
   type AgentState,
   type ChatError,
   type ChatMessageMetadata,
+  type ChatOutcomeStatus,
   type ChatUIMessage,
   type Citation,
   type Suggestion,
@@ -28,6 +30,7 @@ import { useStreamingConversation } from "./use-streaming-conversation";
 
 type LiveEntryState = {
   agentState?: AgentState;
+  outcomeStatus?: ChatOutcomeStatus;
   error?: ChatError;
   cancelled?: boolean;
 };
@@ -43,12 +46,14 @@ function getAssistantData(message: ChatUIMessage | undefined) {
   const citations: Citation[] = [];
   const suggestions: Suggestion[] = [];
   let agentState: AgentState | undefined;
+  let outcomeStatus: ChatOutcomeStatus | undefined;
   let error: ChatError | undefined;
 
   message?.parts.forEach((part) => {
     if (part.type === "data-citation") citations.push(part.data);
     if (part.type === "data-suggestions") suggestions.splice(0, suggestions.length, ...part.data.items);
     if (part.type === "data-agent-state") agentState = part.data.state;
+    if (part.type === "data-outcome") outcomeStatus = part.data.status;
     if (part.type === "data-error") error = part.data;
   });
 
@@ -56,6 +61,7 @@ function getAssistantData(message: ChatUIMessage | undefined) {
     citations: citations.filter((citation, index) => citations.findIndex((item) => item.id === citation.id) === index),
     suggestions,
     agentState,
+    outcomeStatus,
     error,
   };
 }
@@ -64,7 +70,6 @@ function getActiveStep(agentState?: AgentState) {
   switch (agentState) {
     case "retrieving": return 2;
     case "generating": return 3;
-    case "completed": return 4;
     case "clarification_required": return 1;
     case "understanding": return 0;
     default: return -1;
@@ -94,7 +99,11 @@ export function useLiaraConversation({
       const prompt = getMessageText(latestUserMessage);
       const requestedContext = (body as { userContext?: UserContext } | undefined)?.userContext;
       if (!metadata) throw new Error("A validated chat request requires message metadata.");
-      const request = createChatRequestBody({ message: prompt, metadata, userContext: requestedContext });
+      const request = createChatRequestBody({
+        message: prompt,
+        metadata,
+        ...(requestedContext ? { userContext: requestedContext } : {}),
+      });
 
       return {
         body: request,
@@ -112,6 +121,7 @@ export function useLiaraConversation({
       citation: citationSchema,
       suggestions: suggestionsPayloadSchema,
       "agent-state": agentStateEventSchema,
+      outcome: chatOutcomeSchema,
       error: chatErrorSchema,
     },
     onData: (part) => {
@@ -122,8 +132,18 @@ export function useLiaraConversation({
         if (part.type === "data-agent-state") {
           return { ...current, [messageId]: { ...previous, agentState: part.data.state } };
         }
+        if (part.type === "data-outcome") {
+          return {
+            ...current,
+            [messageId]: {
+              ...previous,
+              outcomeStatus: part.data.status,
+              ...(part.data.status === "cancelled" ? { cancelled: true } : {}),
+            },
+          };
+        }
         if (part.type === "data-error") {
-          return { ...current, [messageId]: { ...previous, agentState: "failed", error: part.data } };
+          return { ...current, [messageId]: { ...previous, outcomeStatus: "failed", error: part.data } };
         }
         return current;
       });
@@ -133,18 +153,20 @@ export function useLiaraConversation({
       if (!messageId) return;
       setLiveEntryState((current) => {
         const previous = current[messageId] ?? {};
-        if (isAbort) return { ...current, [messageId]: { ...previous, cancelled: true } };
+        if (isAbort) {
+          return { ...current, [messageId]: { ...previous, outcomeStatus: "cancelled", cancelled: true } };
+        }
         if (isDisconnect || isError) {
           return {
             ...current,
             [messageId]: {
               ...previous,
-              agentState: "failed",
+              outcomeStatus: "failed",
               error: previous.error ?? toSafeChatError(undefined, latestRequestIdRef.current),
             },
           };
         }
-        return { ...current, [messageId]: { ...previous, agentState: "completed" } };
+        return { ...current, [messageId]: { ...previous, outcomeStatus: "completed" } };
       });
     },
     onError: (error) => {
@@ -154,7 +176,7 @@ export function useLiaraConversation({
         ...current,
         [messageId]: {
           ...current[messageId],
-          agentState: "failed",
+          outcomeStatus: "failed",
           error: toSafeChatError(error, latestRequestIdRef.current),
         },
       }));
@@ -176,18 +198,20 @@ export function useLiaraConversation({
       const submitted = isLatest && live.status === "submitted";
       const streaming = isLatest && live.status === "streaming";
       const agentState = data.agentState ?? localState.agentState;
+      const outcomeStatus = data.outcomeStatus ?? localState.outcomeStatus;
 
       entries.push({
         id: message.id,
         prompt: getMessageText(message),
         sentAt: sentAtByMessage[message.id] ?? new Date().toISOString(),
-        liveText: assistantMessage ? getMessageText(assistantMessage) : undefined,
-        agentState,
         citations: data.citations,
         suggestions: data.suggestions,
-        error: data.error ?? localState.error,
-        cancelled: localState.cancelled,
         transportMode: "live",
+        ...(assistantMessage ? { liveText: getMessageText(assistantMessage) } : {}),
+        ...(agentState ? { agentState } : {}),
+        ...(outcomeStatus ? { outcomeStatus } : {}),
+        ...(data.error ?? localState.error ? { error: data.error ?? localState.error } : {}),
+        ...(localState.cancelled !== undefined ? { cancelled: localState.cancelled } : {}),
         lifecycle: {
           phase: submitted ? "loading" : streaming ? "streaming" : "complete",
           progress: streaming ? .5 : submitted ? 0 : 1,
@@ -247,7 +271,16 @@ export function useLiaraConversation({
     else {
       live.stop();
       const messageId = latestUserIdRef.current;
-      if (messageId) setLiveEntryState((current) => ({ ...current, [messageId]: { ...current[messageId], cancelled: true } }));
+      if (messageId) {
+        setLiveEntryState((current) => ({
+          ...current,
+          [messageId]: {
+            ...current[messageId],
+            outcomeStatus: "cancelled",
+            cancelled: true,
+          },
+        }));
+      }
     }
   }, [live, mode, preview]);
 

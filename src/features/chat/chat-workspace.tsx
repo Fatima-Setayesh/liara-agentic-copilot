@@ -2,7 +2,7 @@
 
 import { ReactNode, useEffect, useRef } from "react";
 
-import type { AgentState, ChatError, Citation, Suggestion } from "@/contracts";
+import type { AgentState, ChatError, ChatOutcomeStatus, Citation, Suggestion } from "@/contracts";
 
 import { AiResponseCard } from "./ai-response-card";
 import type { AiResponsePresentation } from "./ai-response-model";
@@ -16,6 +16,7 @@ export type ChatEntry = {
   sentAt: string;
   response?: AiResponsePresentation;
   agentState?: AgentState;
+  outcomeStatus?: ChatOutcomeStatus;
   citations?: Citation[];
   suggestions?: Suggestion[];
   lifecycle?: ResponseLifecycle;
@@ -85,18 +86,19 @@ export function ChatWorkspace({ entries, composer, citations = [], onSuggestedPr
               <AiResponseCard
                 prompt={entry.prompt}
                 timestamp={entry.sentAt}
-                presentation={entry.response}
-                agentState={entry.agentState}
                 citations={entry.citations ?? (index === entries.length - 1 ? citations : [])}
-                suggestions={entry.suggestions}
-                lifecycle={entry.lifecycle}
-                projectEvidence={entry.projectEvidence}
-                liveText={entry.liveText}
-                error={entry.error}
-                cancelled={entry.cancelled}
-                transportMode={entry.transportMode}
                 onRetry={() => onRetryEntry(entry.id)}
                 onSuggestedPrompt={onSuggestedPrompt}
+                {...(entry.response ? { presentation: entry.response } : {})}
+                {...(entry.agentState ? { agentState: entry.agentState } : {})}
+                {...(entry.outcomeStatus ? { outcomeStatus: entry.outcomeStatus } : {})}
+                {...(entry.suggestions ? { suggestions: entry.suggestions } : {})}
+                {...(entry.lifecycle ? { lifecycle: entry.lifecycle } : {})}
+                {...(entry.projectEvidence ? { projectEvidence: entry.projectEvidence } : {})}
+                {...(entry.liveText !== undefined ? { liveText: entry.liveText } : {})}
+                {...(entry.error ? { error: entry.error } : {})}
+                {...(entry.cancelled !== undefined ? { cancelled: entry.cancelled } : {})}
+                {...(entry.transportMode ? { transportMode: entry.transportMode } : {})}
               />
             </div>
           ))}

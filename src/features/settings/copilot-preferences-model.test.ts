@@ -7,6 +7,10 @@ import {
 } from "./copilot-preferences-model";
 
 describe("copilot preferences", () => {
+  it("connects new sessions to the real chat API by default", () => {
+    expect(defaultCopilotPreferences.connectionMode).toBe("live");
+  });
+
   it("accepts validated persisted preferences", () => {
     expect(parseStoredCopilotPreferences(JSON.stringify(defaultCopilotPreferences))).toEqual(defaultCopilotPreferences);
   });

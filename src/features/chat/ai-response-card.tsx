@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { useId, useState } from "react";
 
-import type { AgentState, ChatError, Citation, Suggestion } from "@/contracts";
+import type { AgentState, ChatError, ChatOutcomeStatus, Citation, Suggestion } from "@/contracts";
 
 import { AgentStatus } from "./agent-status";
 import {
@@ -43,6 +43,7 @@ type ResponseCardProps = {
   citations: Citation[];
   presentation?: AiResponsePresentation;
   agentState?: AgentState;
+  outcomeStatus?: ChatOutcomeStatus;
   suggestions?: Suggestion[];
   onSuggestedPrompt: (prompt: string) => void;
   onFeedback?: (feedback: Feedback) => void;
@@ -70,6 +71,7 @@ export function AiResponseCard({
   citations,
   presentation,
   agentState,
+  outcomeStatus,
   suggestions = [],
   onSuggestedPrompt,
   onFeedback,
@@ -146,7 +148,11 @@ export function AiResponseCard({
               </ResponseSection>
               {isStreaming && <span className={streamingStyles.streamingStatus} role="status">Liara is generating the response.</span>}
             </div>
-            <AgentStatus agentState={agentState} headingId={agentStatusId} />
+            <AgentStatus
+              headingId={agentStatusId}
+              {...(agentState ? { agentState } : {})}
+              {...(outcomeStatus ? { outcomeStatus } : {})}
+            />
           </div>
         ) : (
         <div className={`${styles.presentationGrid} ${isStreaming ? streamingStyles.streamingRegion : ""}`}>
@@ -196,7 +202,11 @@ export function AiResponseCard({
             )}
           </div>
 
-          <AgentStatus agentState={agentState} headingId={agentStatusId} />
+          <AgentStatus
+            headingId={agentStatusId}
+            {...(agentState ? { agentState } : {})}
+            {...(outcomeStatus ? { outcomeStatus } : {})}
+          />
         </div>
         )}
 
@@ -229,7 +239,10 @@ export function AiResponseCard({
         </div>}
 
         {responseReady && (
-          <SourcesSection citations={citations} projectEvidence={projectEvidence} />
+          <SourcesSection
+            citations={citations}
+            {...(projectEvidence ? { projectEvidence } : {})}
+          />
         )}
 
         {responseReady && <RecommendedActions

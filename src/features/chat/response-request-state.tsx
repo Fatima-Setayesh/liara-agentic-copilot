@@ -12,6 +12,7 @@ const errorTitles: Record<ChatError["code"], string> = {
   RETRIEVAL_FAILED: "Official sources could not be checked",
   MODEL_UNAVAILABLE: "The AI service is temporarily unavailable",
   STREAM_INTERRUPTED: "The response stream was interrupted",
+  TIMEOUT: "The request timed out",
   INTERNAL_ERROR: "Liara could not complete this request",
 };
 

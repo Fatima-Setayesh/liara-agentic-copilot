@@ -20,14 +20,16 @@ function splitMarkdownBlocks(content: string): MarkdownBlock[] {
 
   for (const match of content.matchAll(fencePattern)) {
     const index = match.index ?? 0;
+    const language = match[1] ?? "";
+    const code = match[2] ?? "";
     if (index > cursor) {
       blocks.push({ type: "text", content: content.slice(cursor, index) });
     }
 
     blocks.push({
       type: "code",
-      language: match[1].trim() || "text",
-      content: match[2].replace(/\n$/, ""),
+      language: language.trim() || "text",
+      content: code.replace(/\n$/, ""),
     });
     cursor = index + match[0].length;
   }

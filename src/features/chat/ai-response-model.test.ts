@@ -57,7 +57,7 @@ describe("agent status presentation", () => {
   });
 
   it("marks every public step complete only after the completed event", () => {
-    const steps = getAgentStatusSteps("completed");
+    const steps = getAgentStatusSteps(undefined, "completed");
 
     expect(steps).toHaveLength(4);
     expect(steps.every((step) => step.state === "complete")).toBe(true);
