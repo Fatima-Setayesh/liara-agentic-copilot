@@ -50,6 +50,7 @@ import { useCopilotPreferences } from "@/features/settings/use-copilot-preferenc
 import { useAccentTheme, type AccentTheme } from "@/features/settings/use-accent-theme";
 
 import styles from "./copilot-home.module.css";
+import { useApplicationHealth } from "./use-application-health";
 
 type NavigationItem = {
   label: string;
@@ -203,12 +204,12 @@ function Sidebar({
           }}
           data-active={(activeItem === "Chat" && activeConversationId === null) || undefined}
           aria-pressed={activeItem === "Chat" && activeConversationId === null}
-          aria-label="New Chat"
+          aria-label="New conversation"
           aria-describedby={collapsed ? "sidebar-new-chat-tooltip" : undefined}
         >
           <Plus size={23} strokeWidth={1.7} aria-hidden="true" />
-          <span>New Chat</span>
-          <SidebarTooltip id="sidebar-new-chat-tooltip" label="New Chat" />
+          <span>New conversation</span>
+          <SidebarTooltip id="sidebar-new-chat-tooltip" label="New conversation" />
         </button>
 
         <nav className={styles.navList}>
@@ -462,6 +463,7 @@ function PromptComposer({
   onSubmitPrompt,
   showSuggestions = true,
   busy = false,
+  clarificationRequired = false,
   sendOnEnter = true,
   onCancel,
   textareaRef,
@@ -470,6 +472,7 @@ function PromptComposer({
   onSubmitPrompt?: (prompt: string) => void;
   showSuggestions?: boolean;
   busy?: boolean;
+  clarificationRequired?: boolean;
   sendOnEnter?: boolean;
   onCancel?: () => void;
   textareaRef?: RefObject<HTMLTextAreaElement | null>;
@@ -482,7 +485,7 @@ function PromptComposer({
 
   function submitPrompt(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!canSubmit || busy) return;
+    if (!canSubmit || busy || clarificationRequired) return;
     const nextPrompt = prompt.trim();
     setSubmitted(true);
     onSubmitPrompt?.(nextPrompt);
@@ -503,13 +506,16 @@ function PromptComposer({
               const shouldSend = event.key === "Enter" && (
                 (sendOnEnter && !event.shiftKey) || (!sendOnEnter && (event.metaKey || event.ctrlKey))
               );
-              if (shouldSend && !busy) {
+              if (shouldSend && !busy && !clarificationRequired) {
                 event.preventDefault();
                 event.currentTarget.form?.requestSubmit();
               }
             }}
-            placeholder="Ask about deployment, databases, domains, errors, or Liara services..."
+            placeholder={clarificationRequired
+              ? "Complete the clarification details above to continue."
+              : "Ask about deployment, databases, domains, errors, or Liara services..."}
             aria-label="Ask Liara Copilot"
+            disabled={clarificationRequired}
             maxLength={MAX_CHAT_MESSAGE_CHARACTERS}
             rows={3}
           />
@@ -521,7 +527,7 @@ function PromptComposer({
               <button
                 type={busy ? "button" : "submit"}
                 className={styles.sendButton}
-                disabled={!busy && !canSubmit}
+                disabled={clarificationRequired || (!busy && !canSubmit)}
                 onClick={busy ? onCancel : undefined}
                 aria-label={busy ? "Stop generation" : "Send prompt"}
                 aria-describedby={busy ? undefined : sendTooltipId}
@@ -553,7 +559,7 @@ function PromptComposer({
                     type="button"
                     key={label}
                     onClick={() => onSubmitPrompt?.(suggestionPrompt)}
-                    disabled={busy}
+                    disabled={busy || clarificationRequired}
                     tabIndex={isDuplicate ? -1 : 0}
                   >
                     <Icon size={19} strokeWidth={1.7} />
@@ -592,6 +598,7 @@ export function CopilotHome() {
   const hydratedConversationRef = useRef<string | null>(null);
   const copilotPreferences = useCopilotPreferences();
   const accentTheme = useAccentTheme();
+  const applicationHealth = useApplicationHealth();
   const {
     chatEntries,
     busy,
@@ -610,6 +617,7 @@ export function CopilotHome() {
   const historyIsLoading = conversationHistory.isLoading;
   const updateHistoryTranscript = conversationHistory.updateTranscript;
   const closeSettings = useCallback(() => setSettingsOpen(false), []);
+  const clarificationRequired = chatEntries.at(-1)?.agentState === "clarification_required";
 
   function submitPrompt(prompt: string) {
     const conversationId = conversationHistory.registerPrompt(prompt);
@@ -796,6 +804,7 @@ export function CopilotHome() {
               <PromptComposer
                 onSubmitPrompt={submitPrompt}
                 busy={busy}
+                clarificationRequired={clarificationRequired}
                 onCancel={cancelGeneration}
                 sendOnEnter={copilotPreferences.preferences.sendOnEnter}
                 textareaRef={composerRef}
@@ -806,12 +815,14 @@ export function CopilotHome() {
               entries={chatEntries}
               onSuggestedPrompt={submitPrompt}
               onRetryEntry={retryEntry}
+              onSubmitClarification={submitPrompt}
               composer={(
                 <PromptComposer
                   mode="chat"
                   showSuggestions={false}
                   onSubmitPrompt={submitPrompt}
                   busy={busy}
+                  clarificationRequired={clarificationRequired}
                   onCancel={cancelGeneration}
                   sendOnEnter={copilotPreferences.preferences.sendOnEnter}
                   textareaRef={composerRef}
@@ -848,7 +859,7 @@ export function CopilotHome() {
         <footer className={styles.footerStatus}>
           <span><Cloud size={19} /> Liara Cloud</span>
           <span className={styles.footerDivider} />
-          <span><i /> All systems operational</span>
+          <span data-health={applicationHealth}><i /> {applicationHealth === "checking" ? "Checking systems…" : applicationHealth === "ready" ? "Systems ready" : "Systems degraded"}</span>
         </footer>
       </section>
       <SettingsDialog

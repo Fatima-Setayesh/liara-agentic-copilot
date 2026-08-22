@@ -34,6 +34,7 @@ type ChatWorkspaceProps = {
   citations?: Citation[];
   onSuggestedPrompt: (prompt: string) => void;
   onRetryEntry: (entryId: string) => void;
+  onSubmitClarification: (prompt: string) => void;
 };
 
 function formatTimestamp(timestamp: string) {
@@ -57,7 +58,7 @@ function UserMessage({ entry }: { entry: ChatEntry }) {
   );
 }
 
-export function ChatWorkspace({ entries, composer, citations = [], onSuggestedPrompt, onRetryEntry }: ChatWorkspaceProps) {
+export function ChatWorkspace({ entries, composer, citations = [], onSuggestedPrompt, onRetryEntry, onSubmitClarification }: ChatWorkspaceProps) {
   const streamRef = useRef<HTMLDivElement>(null);
   const latestLifecycle = entries.at(-1)?.lifecycle;
 
@@ -95,6 +96,9 @@ export function ChatWorkspace({ entries, composer, citations = [], onSuggestedPr
                 citations={entry.citations ?? (index === entries.length - 1 ? citations : [])}
                 onRetry={() => onRetryEntry(entry.id)}
                 onSuggestedPrompt={onSuggestedPrompt}
+                {...(index === entries.length - 1 && entry.agentState === "clarification_required"
+                  ? { onSubmitClarification }
+                  : {})}
                 {...(entry.response ? { presentation: entry.response } : {})}
                 {...(entry.agentState ? { agentState: entry.agentState } : {})}
                 {...(entry.outcomeStatus ? { outcomeStatus: entry.outcomeStatus } : {})}

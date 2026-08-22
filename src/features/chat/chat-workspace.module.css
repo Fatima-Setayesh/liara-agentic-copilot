@@ -342,6 +342,9 @@
 .markdownContent ul:last-child,
 .markdownContent ol:last-child { margin-bottom: 0; }
 .markdownContent strong { color: #e8eeee; font-weight: 560; }
+.markdownContent a { color: var(--accent-bright, #55ead3); text-decoration: underline; text-decoration-color: var(--accent-border); text-underline-offset: 3px; overflow-wrap: anywhere; }
+.markdownContent a:hover { text-decoration-color: currentColor; }
+.markdownContent a:focus-visible { border-radius: 3px; outline: 2px solid var(--accent-primary); outline-offset: 3px; }
 .markdownContent ul,
 .markdownContent ol { display: grid; gap: 6px; margin: 7px 0 12px; padding-inline-start: 18px; }
 .markdownContent li::marker { color: var(--accent-primary, #41ddca); }

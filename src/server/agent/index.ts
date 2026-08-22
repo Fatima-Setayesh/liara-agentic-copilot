@@ -1,4 +1,4 @@
-export { createCitations } from "./citations";
+export { createCitations, selectReferencedCitations } from "./citations";
 export {
   GroundedChatError,
   createGroundedChatService,

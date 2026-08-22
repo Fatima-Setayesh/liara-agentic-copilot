@@ -117,6 +117,15 @@ export function getAgentStatusSteps(
   agentState?: AgentState,
   outcomeStatus?: ChatOutcomeStatus,
 ): AgentStatusStep[] {
+  if (agentState === "clarification_required") {
+    return [
+      { label: "Understanding your request", detail: "Completed", state: "complete" },
+      { label: "Clarification needed", detail: "Waiting for your input", state: "waiting" },
+      { label: "Searching official Liara sources", detail: "Not started", state: "pending" },
+      { label: "Response ready", detail: "Pending", state: "pending" },
+    ];
+  }
+
   if (outcomeStatus === "completed") {
     return [
       { label: "Understanding your request", detail: "Completed", state: "complete" },
@@ -153,12 +162,7 @@ export function getAgentStatusSteps(
         { label: "Response ready", detail: "Pending", state: "pending" },
       ];
     case "clarification_required":
-      return [
-        { label: "Understanding your request", detail: "Completed", state: "complete" },
-        { label: "Clarification needed", detail: "Waiting for your input", state: "waiting" },
-        { label: "Preparing grounded answer", detail: "Pending", state: "pending" },
-        { label: "Response ready", detail: "Pending", state: "pending" },
-      ];
+      return pendingSteps;
     case "retrieving":
       return [
         { label: "Understanding your request", detail: "Completed", state: "complete" },

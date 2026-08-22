@@ -9,10 +9,34 @@ import {
 } from "@/contracts";
 import type { ChatEntry } from "@/features/chat/chat-workspace";
 
+const codeTokenSchema = z.object({
+  text: z.string().max(8_000),
+  tone: z.enum(["property", "string", "keyword", "punctuation", "plain"]).optional(),
+}).strip();
+
+const codeLineSchema = z.object({
+  tokens: z.array(codeTokenSchema).max(100),
+  important: z.boolean().optional(),
+}).strip();
+
+const responsePresentationSchema = z.object({
+  analysis: z.string().max(48_000),
+  problemDetected: z.string().max(48_000),
+  whyThisHappens: z.string().max(48_000),
+  recommendedFix: z.string().max(48_000),
+  codeExample: z.object({
+    fileName: z.string().max(256),
+    language: z.string().max(64),
+    lines: z.array(codeLineSchema).max(2_000),
+    note: z.string().max(8_000).optional(),
+  }).strip().optional(),
+}).strip();
+
 const persistedChatEntrySchema = z.object({
   id: z.string().min(1).max(128),
   prompt: z.string().trim().min(1).max(16_000),
   sentAt: z.string().datetime(),
+  response: responsePresentationSchema.optional(),
   agentState: agentStateSchema.optional(),
   outcomeStatus: chatOutcomeStatusSchema.optional(),
   citations: z.array(citationSchema).max(24).optional(),
@@ -70,6 +94,7 @@ export function restoreChatEntries(entries: ConversationRecord["entries"]): Chat
     id: entry.id,
     prompt: entry.prompt,
     sentAt: entry.sentAt,
+    ...(entry.response ? { response: entry.response } : {}),
     ...(entry.agentState ? { agentState: entry.agentState } : {}),
     ...(entry.outcomeStatus ? { outcomeStatus: entry.outcomeStatus } : {}),
     ...(entry.citations ? { citations: entry.citations } : {}),

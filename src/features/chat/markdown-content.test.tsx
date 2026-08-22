@@ -26,4 +26,18 @@ describe("MarkdownContent bidirectional rendering", () => {
     expect(html).toContain('dir="ltr"');
     expect(html).toContain('{&quot;port&quot;: 3000}');
   });
+
+  it("renders safe Markdown links and strips unsafe protocols", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownContent content={"Read [Liara docs](https://docs.liara.ir) but not [unsafe](javascript:alert(1)) or [data](data:text/html,test)."} />,
+    );
+
+    expect(html).toContain('href="https://docs.liara.ir"');
+    expect(html).toContain('target="_blank"');
+    expect(html).toContain('rel="noopener noreferrer"');
+    expect(html).not.toContain("javascript:");
+    expect(html).not.toContain("data:text/html");
+    expect(html).toContain("unsafe");
+    expect(html).toContain("data");
+  });
 });

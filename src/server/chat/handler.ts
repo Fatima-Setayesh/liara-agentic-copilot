@@ -27,6 +27,7 @@ import {
 } from "@/server/ai";
 import {
   GroundedChatError,
+  selectReferencedCitations,
   type GroundedChatService,
 } from "@/server/agent";
 import { RetrievalConfigurationError } from "@/server/retrieval";
@@ -335,12 +336,33 @@ export function createChatPostHandler(
         try {
           operationSignal.throwIfAborted();
           writeAgentState(writer, "understanding");
-          writeAgentState(writer, "retrieving");
 
           const result = await service.answer({
             request: parsedRequest,
             signal: operationSignal,
+            onAgentState: (state) => writeAgentState(writer, state),
           });
+
+          if (result.kind === "clarification") {
+            writeAgentState(writer, "clarification_required");
+            writeStaticAnswer(writer, result.answer);
+            writeOutcome(writer, {
+              status: "completed",
+              evidenceStatus: "none",
+            });
+            writer.write({
+              type: "finish",
+              finishReason: "stop",
+              messageMetadata: metadata,
+            });
+            writeChatLog(logger, {
+              event: "chat_request_completed",
+              requestId,
+              durationMs: durationMs(),
+              outcome: "completed",
+            });
+            return;
+          }
 
           if (result.kind === "no_evidence") {
             writeStaticAnswer(writer, result.answer);
@@ -362,12 +384,10 @@ export function createChatPostHandler(
             return;
           }
 
-          for (const citation of result.citations) {
-            writeCitation(writer, citation);
-          }
           writeAgentState(writer, "generating");
 
           let modelStreamError: unknown = null;
+          let answerText = "";
           const uiStream = toUIMessageStream<ToolSet, ChatUIMessage>({
             stream: result.stream,
             sendStart: false,
@@ -396,6 +416,13 @@ export function createChatPostHandler(
                   true,
                 );
               }
+              if (part.type === "text-delta") {
+                answerText += "delta" in part
+                  ? part.delta
+                  : "text" in part && typeof part.text === "string"
+                    ? part.text
+                    : "";
+              }
               writer.write(part);
             }
           } finally {
@@ -418,9 +445,18 @@ export function createChatPostHandler(
             throw timeoutSignal.reason;
           }
 
+          const referencedCitations = selectReferencedCitations(
+            answerText,
+            result.citations,
+          );
+          for (const citation of referencedCitations) {
+            writeCitation(writer, citation);
+          }
           writeOutcome(writer, {
             status: "completed",
-            evidenceStatus: result.evidenceStatus,
+            evidenceStatus: referencedCitations.length > 0
+              ? result.evidenceStatus
+              : "none",
           });
           writer.write({
             type: "finish",
