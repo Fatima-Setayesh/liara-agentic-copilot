@@ -2,6 +2,7 @@ import { BookOpenCheck, FileSearch2, GitBranch, ShieldCheck } from "lucide-react
 
 import type { SourceItem } from "./source-experience-model";
 import styles from "./sources-section.module.css";
+import { getTextDirection } from "./text-direction";
 
 type SourceCardProps = {
   item: SourceItem;
@@ -28,7 +29,7 @@ export function SourceCard({ item, selected, onSelect }: SourceCardProps) {
       <span className={styles.sourceCardIcon} aria-hidden="true">
         <SourceIcon kind={item.kind} />
       </span>
-      <span className={styles.sourceCardCopy}>
+      <span className={styles.sourceCardCopy} dir={getTextDirection(`${item.title} ${item.descriptor}`)}>
         <strong>{item.title}</strong>
         <small>{item.descriptor}</small>
         <span className={styles.sourceLabels}>

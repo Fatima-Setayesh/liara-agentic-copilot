@@ -18,6 +18,10 @@ describe("chat contract v1", () => {
       conversationId: "conversation_123",
       clientRequestId: "request_123",
       message: "How do I deploy a Next.js application on Liara?",
+      recentContext: [
+        { role: "user", content: "My project uses Next.js." },
+        { role: "assistant", content: "Which deployment step is failing?" },
+      ],
       userContext: {
         framework: "Next.js",
         experienceLevel: "intermediate",

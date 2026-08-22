@@ -29,7 +29,7 @@ export function SourcesSection({ citations, projectEvidence }: SourcesSectionPro
   const sourceLabel = `${sourceItems.length} ${sourceItems.length === 1 ? "source" : "sources"}`;
 
   return (
-    <section className={styles.sourcesSection} aria-label="Sources and grounding">
+    <section className={styles.sourcesSection} aria-label="Sources and grounding" data-chat-sources>
       <button
         type="button"
         className={styles.sourcesToggle}
@@ -63,8 +63,8 @@ export function SourcesSection({ citations, projectEvidence }: SourcesSectionPro
             <div className={styles.emptySources}>
               <span aria-hidden="true"><ShieldCheck size={18} strokeWidth={1.7} /></span>
               <div>
-                <strong>No verified sources attached</strong>
-                <p>This response does not claim documentation or project evidence that was not provided by the grounded chat stream.</p>
+                <strong>No sources for this conversation yet.</strong>
+                <p>Official citations will appear here when a grounded answer includes them.</p>
               </div>
             </div>
           ) : (

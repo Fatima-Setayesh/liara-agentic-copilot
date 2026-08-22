@@ -8,6 +8,7 @@ import { AiResponseCard } from "./ai-response-card";
 import type { AiResponsePresentation } from "./ai-response-model";
 import type { ProjectEvidence } from "./source-experience-model";
 import type { ResponseLifecycle } from "./streaming-types";
+import { getTextDirection } from "./text-direction";
 import styles from "./chat-workspace.module.css";
 
 export type ChatEntry = {
@@ -47,7 +48,7 @@ function UserMessage({ entry }: { entry: ChatEntry }) {
     <article className={styles.userMessageRow} aria-label="Your message">
       <div className={styles.userMessageColumn}>
         <time dateTime={entry.sentAt}>{formatTimestamp(entry.sentAt)}</time>
-        <div className={styles.userMessageBubble}>
+        <div className={styles.userMessageBubble} dir={getTextDirection(entry.prompt)}>
           <p>{entry.prompt}</p>
         </div>
       </div>
@@ -80,7 +81,12 @@ export function ChatWorkspace({ entries, composer, citations = [], onSuggestedPr
     <section className={styles.chatWorkspace} aria-label="Chat workspace">
       <div className={styles.conversationStream} ref={streamRef}>
         <div className={styles.conversationInner}>
-          {entries.map((entry, index) => (
+          {entries.length === 0 ? (
+            <div className={styles.emptyTranscript} role="status">
+              <strong>No saved transcript is available for this conversation.</strong>
+              <p>This legacy history item was created before full message persistence. You can continue it below or start a new chat.</p>
+            </div>
+          ) : entries.map((entry, index) => (
             <div className={styles.exchange} key={entry.id}>
               <UserMessage entry={entry} />
               <AiResponseCard

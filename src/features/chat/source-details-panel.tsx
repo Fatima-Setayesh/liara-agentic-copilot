@@ -2,6 +2,7 @@ import { ArrowUpRight, BookOpenCheck, FileSearch2, FolderTree } from "lucide-rea
 
 import type { SourceItem } from "./source-experience-model";
 import styles from "./sources-section.module.css";
+import { getTextDirection } from "./text-direction";
 
 type SourceDetailsPanelProps = {
   source: SourceItem;
@@ -12,7 +13,7 @@ export function SourceDetailsPanel({ source }: SourceDetailsPanelProps) {
     const technologies = source.evidence.technologies ?? [];
 
     return (
-      <section className={styles.sourceDetailsPanel} aria-label="Project context details">
+      <section className={styles.sourceDetailsPanel} aria-label="Project context details" dir={getTextDirection(`${source.title} ${source.evidence.summary ?? ""}`)}>
         <header className={styles.detailsHeader}>
           <span aria-hidden="true"><FileSearch2 size={18} strokeWidth={1.8} /></span>
           <div>
@@ -44,7 +45,7 @@ export function SourceDetailsPanel({ source }: SourceDetailsPanelProps) {
   const { source: citationSource } = source.citation;
 
   return (
-    <section className={styles.sourceDetailsPanel} aria-label={`${source.title} details`}>
+    <section className={styles.sourceDetailsPanel} aria-label={`${source.title} details`} dir={getTextDirection(`${source.title} ${citationSource.snippet ?? ""}`)}>
       <header className={styles.detailsHeader}>
         <span aria-hidden="true"><BookOpenCheck size={18} strokeWidth={1.8} /></span>
         <div>

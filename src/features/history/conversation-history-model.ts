@@ -1,12 +1,40 @@
 import { z } from "zod";
 
+import {
+  agentStateSchema,
+  chatErrorSchema,
+  chatOutcomeStatusSchema,
+  citationSchema,
+  suggestionSchema,
+} from "@/contracts";
+import type { ChatEntry } from "@/features/chat/chat-workspace";
+
+const persistedChatEntrySchema = z.object({
+  id: z.string().min(1).max(128),
+  prompt: z.string().trim().min(1).max(16_000),
+  sentAt: z.string().datetime(),
+  agentState: agentStateSchema.optional(),
+  outcomeStatus: chatOutcomeStatusSchema.optional(),
+  citations: z.array(citationSchema).max(24).optional(),
+  suggestions: z.array(suggestionSchema).max(4).optional(),
+  liveText: z.string().max(48_000).optional(),
+  error: chatErrorSchema.optional(),
+  cancelled: z.boolean().optional(),
+  transportMode: z.enum(["preview", "live"]).optional(),
+}).strip();
+
+const persistedTranscriptSchema = z.array(persistedChatEntrySchema).max(100);
+
 export const conversationRecordSchema = z.strictObject({
   id: z.string().min(1).max(128),
   title: z.string().trim().min(1).max(80),
   updatedAt: z.string().datetime(),
   pinned: z.boolean(),
   archived: z.boolean(),
+  entries: persistedTranscriptSchema,
 });
+
+const legacyConversationRecordSchema = conversationRecordSchema.omit({ entries: true });
 
 const conversationHistorySchema = z.array(conversationRecordSchema).max(200);
 
@@ -17,34 +45,40 @@ export type ConversationGroup = {
   items: ConversationRecord[];
 };
 
-function atLocalTime(base: Date, dayOffset: number, hour: number, minute: number) {
-  const date = new Date(base);
-  date.setDate(date.getDate() + dayOffset);
-  date.setHours(hour, minute, 0, 0);
-  return date.toISOString();
-}
-
-export function createSeedConversationHistory(now = new Date()): ConversationRecord[] {
-  return [
-    { id: "history-next-deploy", title: "Fix Next.js deployment issue", updatedAt: atLocalTime(now, 0, 10, 42), pinned: true, archived: false },
-    { id: "history-postgres", title: "Database connection problem", updatedAt: atLocalTime(now, 0, 9, 15), pinned: false, archived: false },
-    { id: "history-docker", title: "Docker build failure", updatedAt: atLocalTime(now, -1, 16, 8), pinned: false, archived: false },
-    { id: "history-environment", title: "Environment configuration", updatedAt: atLocalTime(now, -1, 13, 21), pinned: false, archived: false },
-    { id: "history-domain", title: "Configure custom domain", updatedAt: atLocalTime(now, -4, 11, 48), pinned: false, archived: false },
-    { id: "history-timeout", title: "Debug API timeout", updatedAt: atLocalTime(now, -8, 15, 30), pinned: false, archived: false },
-    { id: "history-variables", title: "Environment variables setup", updatedAt: atLocalTime(now, -18, 12, 5), pinned: false, archived: true },
-  ];
-}
-
 export function parseStoredConversationHistory(value: string | null): ConversationRecord[] | null {
   if (!value) return null;
 
   try {
-    const result = conversationHistorySchema.safeParse(JSON.parse(value));
-    return result.success ? result.data : null;
+    const raw = JSON.parse(value);
+    const current = conversationHistorySchema.safeParse(raw);
+    if (current.success) return current.data;
+
+    const legacy = z.array(legacyConversationRecordSchema).max(200).safeParse(raw);
+    return legacy.success ? legacy.data.map((conversation) => ({ ...conversation, entries: [] })) : null;
   } catch {
     return null;
   }
+}
+
+export function toPersistedChatEntries(entries: ChatEntry[]) {
+  const result = persistedTranscriptSchema.safeParse(entries);
+  return result.success ? result.data : [];
+}
+
+export function restoreChatEntries(entries: ConversationRecord["entries"]): ChatEntry[] {
+  return entries.map((entry) => ({
+    id: entry.id,
+    prompt: entry.prompt,
+    sentAt: entry.sentAt,
+    ...(entry.agentState ? { agentState: entry.agentState } : {}),
+    ...(entry.outcomeStatus ? { outcomeStatus: entry.outcomeStatus } : {}),
+    ...(entry.citations ? { citations: entry.citations } : {}),
+    ...(entry.suggestions ? { suggestions: entry.suggestions } : {}),
+    ...(entry.liveText !== undefined ? { liveText: entry.liveText } : {}),
+    ...(entry.error ? { error: entry.error } : {}),
+    ...(entry.cancelled !== undefined ? { cancelled: entry.cancelled } : {}),
+    ...(entry.transportMode ? { transportMode: entry.transportMode } : {}),
+  }));
 }
 
 function getDayKey(date: Date) {

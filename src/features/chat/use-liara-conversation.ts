@@ -19,6 +19,7 @@ import {
   type ChatOutcomeStatus,
   type ChatUIMessage,
   type Citation,
+  type RecentConversationMessage,
   type Suggestion,
   type UserContext,
 } from "@/contracts";
@@ -34,6 +35,25 @@ type LiveEntryState = {
   error?: ChatError;
   cancelled?: boolean;
 };
+
+function buildRecentContext(entries: ChatEntry[]): RecentConversationMessage[] {
+  const messages = entries.flatMap<RecentConversationMessage>((entry) => {
+    const result: RecentConversationMessage[] = [{ role: "user", content: entry.prompt.slice(0, 2_000) }];
+    const answer = entry.liveText?.trim();
+    if (answer) result.push({ role: "assistant", content: answer.slice(0, 2_000) });
+    return result;
+  });
+  const selected: RecentConversationMessage[] = [];
+  let characterCount = 0;
+
+  for (const message of messages.slice(-6).reverse()) {
+    if (characterCount + message.content.length > 6_000) continue;
+    selected.unshift(message);
+    characterCount += message.content.length;
+  }
+
+  return selected;
+}
 
 function getMessageText(message: ChatUIMessage | undefined) {
   return message?.parts
@@ -86,9 +106,12 @@ export function useLiaraConversation({
   const preview = useStreamingConversation();
   const latestUserIdRef = useRef<string | null>(null);
   const latestRequestIdRef = useRef<string>(`request-${crypto.randomUUID()}`);
+  const recentContextRef = useRef<RecentConversationMessage[]>([]);
+  const transcriptRef = useRef<ChatEntry[]>([]);
   const [activeLiveMessageId, setActiveLiveMessageId] = useState<string | null>(null);
   const [sentAtByMessage, setSentAtByMessage] = useState<Record<string, string>>({});
   const [liveEntryState, setLiveEntryState] = useState<Record<string, LiveEntryState>>({});
+  const [restoredEntries, setRestoredEntries] = useState<ChatEntry[]>([]);
 
   const transport = useMemo(() => new DefaultChatTransport<ChatUIMessage>({
     api: CHAT_API_PATH,
@@ -102,6 +125,7 @@ export function useLiaraConversation({
       const request = createChatRequestBody({
         message: prompt,
         metadata,
+        recentContext: recentContextRef.current,
         ...(requestedContext ? { userContext: requestedContext } : {}),
       });
 
@@ -237,6 +261,7 @@ export function useLiaraConversation({
       conversationId,
     };
     latestUserIdRef.current = messageId;
+    recentContextRef.current = buildRecentContext(transcriptRef.current);
     setActiveLiveMessageId(messageId);
     latestRequestIdRef.current = requestId;
     setSentAtByMessage((current) => ({ ...current, [messageId]: new Date().toISOString() }));
@@ -289,13 +314,38 @@ export function useLiaraConversation({
     live.stop();
     live.clearError();
     live.setMessages([]);
+    recentContextRef.current = [];
+    transcriptRef.current = [];
     latestUserIdRef.current = null;
     setActiveLiveMessageId(null);
     setSentAtByMessage({});
     setLiveEntryState({});
+    setRestoredEntries([]);
   }, [live, preview]);
 
-  const chatEntries = mode === "preview" ? preview.chatEntries : liveEntries;
+  const loadConversation = useCallback((entries: ChatEntry[]) => {
+    preview.resetConversation();
+    live.stop();
+    live.clearError();
+    live.setMessages([]);
+    recentContextRef.current = buildRecentContext(entries);
+    transcriptRef.current = entries;
+    latestUserIdRef.current = null;
+    setActiveLiveMessageId(null);
+    setSentAtByMessage({});
+    setLiveEntryState({});
+    setRestoredEntries(entries.map((entry) => ({
+      ...entry,
+      lifecycle: { phase: "complete", progress: 1, activeStep: 4 },
+    })));
+  }, [live, preview]);
+
+  const currentEntries = mode === "preview" ? preview.chatEntries : liveEntries;
+  const chatEntries = useMemo(
+    () => [...restoredEntries, ...currentEntries],
+    [currentEntries, restoredEntries],
+  );
+  transcriptRef.current = chatEntries;
   const busy = mode === "preview"
     ? preview.busy
     : live.status === "submitted" || live.status === "streaming";
@@ -307,5 +357,6 @@ export function useLiaraConversation({
     retryEntry,
     cancelGeneration,
     resetConversation,
+    loadConversation,
   };
 }
