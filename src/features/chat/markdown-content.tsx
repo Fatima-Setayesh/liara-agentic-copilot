@@ -44,7 +44,7 @@ function splitMarkdownBlocks(content: string): MarkdownBlock[] {
 
 function renderInlineMarkdown(content: string): ReactNode[] {
   return content
-    .split(/(`[^`]+`|\*\*[^*]+\*\*)/g)
+    .split(/(`[^`]+`|\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\))/g)
     .filter(Boolean)
     .map((part, index) => {
       if (part.startsWith("`") && part.endsWith("`")) {
@@ -55,8 +55,31 @@ function renderInlineMarkdown(content: string): ReactNode[] {
         return <strong key={`${part}-${index}`}>{renderTechnicalText(part.slice(2, -2))}</strong>;
       }
 
+      const link = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+      if (link) {
+        const label = link[1] ?? "";
+        const href = link[2]?.trim() ?? "";
+        if (isSafeExternalUrl(href)) {
+          return (
+            <a href={href} target="_blank" rel="noopener noreferrer" key={`${part}-${index}`}>
+              {renderTechnicalText(label)}
+            </a>
+          );
+        }
+        return <Fragment key={`${part}-${index}`}>{renderTechnicalText(label)}</Fragment>;
+      }
+
       return <Fragment key={`${part}-${index}`}>{renderTechnicalText(part)}</Fragment>;
     });
+}
+
+function isSafeExternalUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:";
+  } catch {
+    return false;
+  }
 }
 
 const TECHNICAL_TEXT_PATTERN = /(https?:\/\/[^\s<>()]+|www\.[^\s<>()]+|[a-zA-Z]:\\[^\s]+|(?:\/[\w.@~:+-]+){1,}|\b\d{1,3}(?:\.\d{1,3}){3}\b)/g;

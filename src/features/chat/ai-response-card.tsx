@@ -29,7 +29,7 @@ import { MarkdownContent } from "./markdown-content";
 import { ProfessionalCodeBlock } from "./professional-code-block";
 import { RecommendedActions } from "./recommended-actions";
 import { ResponseSection } from "./response-section";
-import { ResponseCancelledState, ResponseErrorState } from "./response-request-state";
+import { ClarificationRequestState, ResponseCancelledState, ResponseErrorState } from "./response-request-state";
 import type { ProjectEvidence } from "./source-experience-model";
 import { SourcesSection } from "./sources-section";
 import { StreamingMessage } from "./streaming-message";
@@ -53,6 +53,7 @@ type ResponseCardProps = {
   error?: ChatError;
   cancelled?: boolean;
   onRetry?: () => void;
+  onSubmitClarification?: (prompt: string) => void;
   transportMode?: "preview" | "live";
 };
 
@@ -81,6 +82,7 @@ export function AiResponseCard({
   error,
   cancelled,
   onRetry,
+  onSubmitClarification,
   transportMode = "live",
 }: ResponseCardProps) {
   const agentStatusId = useId();
@@ -96,7 +98,8 @@ export function AiResponseCard({
   const showDiagnostics = !isStreaming || streamProgress >= .24;
   const showRecommendation = !isStreaming || streamProgress >= .63;
   const showCode = !isStreaming || streamProgress >= .84;
-  const responseReady = (!lifecycle || lifecycle.phase === "complete") && !error && !cancelled;
+  const clarificationRequired = agentState === "clarification_required";
+  const responseReady = (!lifecycle || lifecycle.phase === "complete") && !error && !cancelled && !clarificationRequired;
 
   async function copyResponse() {
     const sourceText = citations.length > 0
@@ -210,6 +213,13 @@ export function AiResponseCard({
             {...(outcomeStatus ? { outcomeStatus } : {})}
           />
         </div>
+        )}
+
+        {clarificationRequired && onSubmitClarification && (
+          <ClarificationRequestState
+            originalQuestion={prompt}
+            onSubmit={onSubmitClarification}
+          />
         )}
 
         {responseReady && <div className={styles.responseInteractions} aria-label="Response actions">

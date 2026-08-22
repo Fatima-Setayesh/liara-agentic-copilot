@@ -5,6 +5,8 @@ import {
   filterConversations,
   groupConversations,
   parseStoredConversationHistory,
+  restoreChatEntries,
+  toPersistedChatEntries,
   type ConversationRecord,
 } from "./conversation-history-model";
 
@@ -43,5 +45,44 @@ describe("conversation history model", () => {
   it("creates compact titles from submitted prompts", () => {
     expect(createConversationTitle("  Help   me deploy Next.js  ")).toBe("Help me deploy Next.js");
     expect(createConversationTitle("x".repeat(70))).toHaveLength(48);
+  });
+
+  it("round-trips the full assistant presentation, citations, and status", () => {
+    const persisted = toPersistedChatEntries([{
+      id: "entry-1",
+      prompt: "Explain this deployment",
+      sentAt: now.toISOString(),
+      response: {
+        analysis: "Full analysis",
+        problemDetected: "Build failed",
+        whyThisHappens: "Configuration mismatch",
+        recommendedFix: "Update the setting",
+        codeExample: {
+          fileName: "liara.json",
+          language: "JSON",
+          lines: [{ tokens: [{ text: "{}", tone: "punctuation" }] }],
+        },
+      },
+      liveText: "Grounded assistant answer [1].",
+      agentState: "generating",
+      outcomeStatus: "completed",
+      citations: [{
+        id: "citation-1",
+        displayIndex: 1,
+        source: {
+          id: "source-1",
+          title: "Liara documentation",
+          url: "https://docs.liara.ir/example/",
+        },
+      }],
+    }]);
+
+    expect(restoreChatEntries(persisted)).toMatchObject([{
+      prompt: "Explain this deployment",
+      response: { analysis: "Full analysis" },
+      liveText: "Grounded assistant answer [1].",
+      outcomeStatus: "completed",
+      citations: [{ id: "citation-1" }],
+    }]);
   });
 });
