@@ -3,7 +3,6 @@
 import Image from "next/image";
 import {
   ArrowUp,
-  Bell,
   BookOpen,
   Bug,
   Check,
@@ -12,8 +11,6 @@ import {
   ChevronRight,
   CircleHelp,
   Cloud,
-  Code2,
-  Command,
   Database,
   FileCode2,
   Gauge,
@@ -24,6 +21,7 @@ import {
   MessageCircle,
   MessageSquareText,
   Network,
+  Palette,
   Paperclip,
   PanelRightOpen,
   Plus,
@@ -33,21 +31,23 @@ import {
   Settings2,
   ShieldCheck,
   Square,
-  Sparkles,
   Target,
   type LucideIcon,
 } from "lucide-react";
-import { FormEvent, RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, RefObject, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { ChatWorkspace } from "@/features/chat/chat-workspace";
+import { SourcesSection } from "@/features/chat/sources-section";
+import { getTextDirection } from "@/features/chat/text-direction";
 import { useLiaraConversation } from "@/features/chat/use-liara-conversation";
 import { ConversationHistory } from "@/features/history/conversation-history";
-import type { ConversationRecord } from "@/features/history/conversation-history-model";
+import { restoreChatEntries, type ConversationRecord } from "@/features/history/conversation-history-model";
 import { useConversationHistory } from "@/features/history/use-conversation-history";
 import { MAX_CHAT_MESSAGE_CHARACTERS, type UserContext } from "@/contracts";
 import type { ConnectionMode } from "@/features/settings/copilot-preferences-model";
 import { SettingsDialog } from "@/features/settings/settings-dialog";
 import { useCopilotPreferences } from "@/features/settings/use-copilot-preferences";
+import { useAccentTheme, type AccentTheme } from "@/features/settings/use-accent-theme";
 
 import styles from "./copilot-home.module.css";
 
@@ -55,6 +55,8 @@ type NavigationItem = {
   label: string;
   icon: LucideIcon;
 };
+
+type WorkspaceView = "Chat" | "Sources" | "History";
 
 const navigation: NavigationItem[] = [
   { label: "Chat", icon: MessageCircle },
@@ -73,6 +75,14 @@ const suggestions = [
   { label: "Check application logs", icon: ScrollText, prompt: "Show me how to inspect application logs on Liara." },
   { label: "Scale application", icon: ServerCog, prompt: "How can I scale my application on Liara?" },
   { label: "Setup custom domain", icon: Globe2, prompt: "Guide me through setting up a custom domain on Liara." },
+];
+
+const accentThemes: Array<{ value: AccentTheme; label: string }> = [
+  { value: "cyan", label: "Liara Cyan" },
+  { value: "violet", label: "Liara Violet" },
+  { value: "blue", label: "Liara Blue" },
+  { value: "orange", label: "Liara Orange" },
+  { value: "white", label: "Liara White" },
 ];
 
 const benefits = [
@@ -112,6 +122,10 @@ function BrandMark({ compact = false }: { compact?: boolean }) {
   );
 }
 
+function SidebarTooltip({ id, label }: { id: string; label: string }) {
+  return <span className={`${styles.controlTooltip} ${styles.sidebarTooltip}`} id={id} role="tooltip">{label}</span>;
+}
+
 function Sidebar({
   collapsed,
   open,
@@ -127,6 +141,8 @@ function Sidebar({
   onTogglePinConversation,
   onToggleCollapsed,
   onOpenSettings,
+  activeItem,
+  onNavigate,
 }: {
   collapsed: boolean;
   open: boolean;
@@ -142,9 +158,9 @@ function Sidebar({
   onTogglePinConversation: (id: string) => void;
   onToggleCollapsed: () => void;
   onOpenSettings: () => void;
+  activeItem: WorkspaceView;
+  onNavigate: (view: WorkspaceView) => void;
 }) {
-  const [activeItem, setActiveItem] = useState("Chat");
-
   return (
     <>
       <button
@@ -182,44 +198,51 @@ function Sidebar({
           className={styles.newConversation}
           type="button"
           onClick={() => {
-            setActiveItem("Chat");
+            onNavigate("Chat");
             onNewConversation();
           }}
           data-active={(activeItem === "Chat" && activeConversationId === null) || undefined}
           aria-pressed={activeItem === "Chat" && activeConversationId === null}
           aria-label="New Chat"
-          title={collapsed ? "New Chat" : undefined}
+          aria-describedby={collapsed ? "sidebar-new-chat-tooltip" : undefined}
         >
           <Plus size={23} strokeWidth={1.7} aria-hidden="true" />
           <span>New Chat</span>
+          <SidebarTooltip id="sidebar-new-chat-tooltip" label="New Chat" />
         </button>
 
         <nav className={styles.navList}>
-          {navigation.map(({ label, icon: Icon }) => (
-            <button
-              key={label}
-              type="button"
-              className={`${styles.navItem} ${activeItem === label ? styles.navItemActive : ""}`}
-              onClick={() => setActiveItem(label)}
-              aria-current={activeItem === label ? "page" : undefined}
-              aria-label={label}
-              title={collapsed ? label : undefined}
-            >
-              <Icon size={21} strokeWidth={1.75} />
-              <span>{label}</span>
-            </button>
-          ))}
+          {navigation.map(({ label, icon: Icon }) => {
+            const tooltipId = `sidebar-${label.toLowerCase()}-tooltip`;
+
+            return (
+              <button
+                key={label}
+                type="button"
+                className={`${styles.navItem} ${activeItem === label ? styles.navItemActive : ""}`}
+                onClick={() => {
+                  onNavigate(label as WorkspaceView);
+                }}
+                aria-current={activeItem === label ? "page" : undefined}
+                aria-label={label}
+                aria-describedby={collapsed ? tooltipId : undefined}
+              >
+                <Icon size={21} strokeWidth={1.75} />
+                <span>{label}</span>
+                <SidebarTooltip id={tooltipId} label={label} />
+              </button>
+            );
+          })}
         </nav>
 
         <div className={styles.sidebarDivider} />
-        <section className={styles.recentSection} aria-labelledby="recent-heading">
+        <section className={styles.recentSection} id="conversation-history" aria-labelledby="recent-heading" tabIndex={-1}>
           <h2 id="recent-heading">Recent conversations</h2>
           <ConversationHistory
             conversations={conversations}
             activeConversationId={activeConversationId}
             loading={historyLoading}
             onSelect={(id) => {
-              setActiveItem("Chat");
               onSelectConversation(id);
             }}
             onRename={onRenameConversation}
@@ -230,13 +253,20 @@ function Sidebar({
         </section>
 
         <div className={styles.profileArea}>
-          <button type="button" className={styles.profileButton} onClick={onOpenSettings} aria-haspopup="dialog">
+          <button
+            type="button"
+            className={styles.profileButton}
+            onClick={onOpenSettings}
+            aria-haspopup="dialog"
+            aria-describedby={collapsed ? "sidebar-settings-tooltip" : undefined}
+          >
             <span className={styles.avatar}>L</span>
             <span className={styles.profileCopy}>
               <strong>Liara Developer</strong>
               <small>developer@liara.cloud</small>
             </span>
             <ChevronDown size={17} />
+            <SidebarTooltip id="sidebar-settings-tooltip" label="Profile & settings" />
           </button>
         </div>
       </aside>
@@ -249,45 +279,105 @@ function Topbar({
   onOpenMenu,
   onOpenSettings,
   connectionMode,
-  searchInputRef,
+  onConnectionModeChange,
+  accentTheme,
+  onAccentThemeChange,
 }: {
   onOpenInspector: () => void;
   onOpenMenu: () => void;
   onOpenSettings: () => void;
   connectionMode: ConnectionMode;
-  searchInputRef: RefObject<HTMLInputElement | null>;
+  onConnectionModeChange: (mode: ConnectionMode) => void;
+  accentTheme: AccentTheme;
+  onAccentThemeChange: (theme: AccentTheme) => void;
 }) {
-  const [searchValue, setSearchValue] = useState("");
+  const [statusMenuOpen, setStatusMenuOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const statusMenuRef = useRef<HTMLDivElement>(null);
+  const paletteRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!statusMenuOpen) return;
+
+    function closeOnOutsideClick(event: PointerEvent) {
+      if (!statusMenuRef.current?.contains(event.target as Node)) setStatusMenuOpen(false);
+    }
+
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") setStatusMenuOpen(false);
+    }
+
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [statusMenuOpen]);
+
+  useEffect(() => {
+    if (!paletteOpen) return;
+
+    function closeOnOutsideClick(event: PointerEvent) {
+      if (!paletteRef.current?.contains(event.target as Node)) setPaletteOpen(false);
+    }
+
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") setPaletteOpen(false);
+    }
+
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [paletteOpen]);
 
   return (
     <header className={styles.topbar}>
       <button className={styles.mobileMenu} type="button" onClick={onOpenMenu} aria-label="Open navigation">
         <Menu size={21} />
       </button>
-      <button className={styles.statusPill} type="button">
-        <span className={styles.statusDot} />
-        <span>Official Liara Docs</span>
-        <span className={styles.statusSeparator}>•</span>
-        <span>{connectionMode === "live" ? "Live API" : "Interface preview"}</span>
-        <ChevronDown size={15} />
-      </button>
-
-      <label className={styles.searchBox}>
-        <Command size={19} className={styles.commandIcon} />
-        <input
-          value={searchValue}
-          ref={searchInputRef}
-          onChange={(event) => setSearchValue(event.target.value)}
-          placeholder="Search or run a command..."
-          aria-label="Search or run a command"
-        />
-        <span className={styles.searchShortcut}>⌘ K</span>
-      </label>
+      <div className={styles.statusMenu} ref={statusMenuRef}>
+        <button className={styles.statusPill} type="button" onClick={() => setStatusMenuOpen((open) => !open)} aria-expanded={statusMenuOpen} aria-haspopup="menu">
+          <span className={styles.statusDot} />
+          <span>Official Liara Docs</span>
+          <span className={styles.statusSeparator}>•</span>
+          <span>{connectionMode === "live" ? "Live API" : "Interface preview"}</span>
+          <ChevronDown size={15} />
+        </button>
+        {statusMenuOpen && (
+          <div className={styles.statusDropdown} role="menu">
+            <a href="https://docs.liara.ir/" target="_blank" rel="noreferrer" role="menuitem">Official Liara Docs</a>
+            <button type="button" role="menuitemradio" aria-checked={connectionMode === "live"} onClick={() => { onConnectionModeChange("live"); setStatusMenuOpen(false); }}>Live API</button>
+            <button type="button" role="menuitemradio" aria-checked={connectionMode === "preview"} onClick={() => { onConnectionModeChange("preview"); setStatusMenuOpen(false); }}>Interface preview</button>
+          </div>
+        )}
+      </div>
 
       <div className={styles.topActions}>
-        <button type="button" className={styles.iconButton} aria-label="Copilot updates"><Sparkles size={21} /></button>
-        <button type="button" className={styles.iconButton} aria-label="Notifications"><Bell size={20} /></button>
-        <button type="button" className={styles.iconButton} aria-label="Help"><CircleHelp size={20} /></button>
+        <a className={styles.iconButton} href="https://docs.liara.ir/" target="_blank" rel="noreferrer" aria-label="Open Liara help documentation"><CircleHelp size={20} /></a>
+        <div className={styles.paletteMenu} ref={paletteRef}>
+          <button type="button" className={styles.iconButton} onClick={() => setPaletteOpen((open) => !open)} aria-label="Change accent theme" title="Change accent theme" aria-haspopup="menu" aria-expanded={paletteOpen}><Palette size={20} /></button>
+          {paletteOpen && (
+            <div className={styles.paletteDropdown} role="menu" aria-label="Accent palette">
+              {accentThemes.map((theme) => (
+                <button
+                  type="button"
+                  role="menuitemradio"
+                  aria-checked={accentTheme === theme.value}
+                  onClick={() => { onAccentThemeChange(theme.value); setPaletteOpen(false); }}
+                  key={theme.value}
+                >
+                  <span className={styles.paletteSwatch} data-palette={theme.value} aria-hidden="true" />
+                  <span>{theme.label}</span>
+                  {accentTheme === theme.value && <Check size={14} aria-hidden="true" />}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         <button type="button" className={styles.topAvatar} onClick={onOpenSettings} aria-label="Open Copilot preferences" aria-haspopup="dialog">L</button>
         <button type="button" className={styles.profileChevron} onClick={onOpenSettings} aria-label="Open Copilot preferences" aria-haspopup="dialog"><ChevronDown size={17} /></button>
       </div>
@@ -386,6 +476,7 @@ function PromptComposer({
 }) {
   const [prompt, setPrompt] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const sendTooltipId = useId();
 
   const canSubmit = useMemo(() => prompt.trim().length > 0, [prompt]);
 
@@ -405,6 +496,7 @@ function PromptComposer({
         <div className={styles.promptInner}>
           <textarea
             value={prompt}
+            dir={getTextDirection(prompt)}
             ref={textareaRef}
             onChange={(event) => setPrompt(event.target.value)}
             onKeyDown={(event) => {
@@ -423,20 +515,24 @@ function PromptComposer({
           />
           <div className={styles.composerActions}>
             <div className={styles.composerTools}>
-              <button type="button" aria-label="Attach file"><Paperclip size={20} /></button>
-              <button type="button" aria-label="Add code snippet"><Code2 size={20} /></button>
+              <button type="button" aria-label="File attachments are not available" title="File attachments are not available yet" disabled><Paperclip size={20} /></button>
             </div>
             <div className={styles.sendGroup}>
-              <span>{busy ? "Generating — stop anytime" : submitted ? "Ready for your conversation" : sendOnEnter ? "Enter to send" : "Ctrl + Enter to send"}</span>
               <button
                 type={busy ? "button" : "submit"}
                 className={styles.sendButton}
                 disabled={!busy && !canSubmit}
                 onClick={busy ? onCancel : undefined}
                 aria-label={busy ? "Stop generation" : "Send prompt"}
+                aria-describedby={busy ? undefined : sendTooltipId}
               >
                 {busy ? <Square size={16} fill="currentColor" /> : submitted ? <Check size={21} /> : <ArrowUp size={22} />}
               </button>
+              {!busy && (
+                <span className={`${styles.controlTooltip} ${styles.sendTooltip}`} id={sendTooltipId} role="tooltip">
+                  Enter to send
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -456,7 +552,8 @@ function PromptComposer({
                     className={styles.suggestionCard}
                     type="button"
                     key={label}
-                    onClick={() => setPrompt(suggestionPrompt)}
+                    onClick={() => onSubmitPrompt?.(suggestionPrompt)}
+                    disabled={busy}
                     tabIndex={isDuplicate ? -1 : 0}
                   >
                     <Icon size={19} strokeWidth={1.7} />
@@ -490,9 +587,11 @@ export function CopilotHome() {
   const [rightPanelCollapsed, setRightPanelCollapsed] = useState(true);
   const [mobileInspectorOpen, setMobileInspectorOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [workspaceView, setWorkspaceView] = useState<WorkspaceView>("Chat");
   const composerRef = useRef<HTMLTextAreaElement>(null);
+  const hydratedConversationRef = useRef<string | null>(null);
   const copilotPreferences = useCopilotPreferences();
+  const accentTheme = useAccentTheme();
   const {
     chatEntries,
     busy,
@@ -500,26 +599,39 @@ export function CopilotHome() {
     retryEntry,
     cancelGeneration,
     resetConversation,
+    loadConversation,
   } = useLiaraConversation({
     mode: copilotPreferences.preferences.connectionMode,
     userContext: copilotPreferences.preferences.userContext,
   });
   const conversationHistory = useConversationHistory();
+  const historyActiveConversationId = conversationHistory.activeConversationId;
+  const historyConversations = conversationHistory.conversations;
+  const historyIsLoading = conversationHistory.isLoading;
+  const updateHistoryTranscript = conversationHistory.updateTranscript;
   const closeSettings = useCallback(() => setSettingsOpen(false), []);
 
   function submitPrompt(prompt: string) {
     const conversationId = conversationHistory.registerPrompt(prompt);
+    hydratedConversationRef.current = conversationId;
     addChatEntry(prompt, conversationId);
   }
 
   function startNewConversation() {
     resetConversation();
     conversationHistory.startNewConversation();
+    hydratedConversationRef.current = null;
+    setWorkspaceView("Chat");
     setSidebarOpen(false);
   }
 
   function selectConversation(id: string) {
+    const conversation = conversationHistory.conversations.find((item) => item.id === id);
+    if (!conversation) return;
     conversationHistory.selectConversation(id);
+    loadConversation(restoreChatEntries(conversation.entries));
+    hydratedConversationRef.current = id;
+    setWorkspaceView("Chat");
     if (window.matchMedia("(max-width: 1020px)").matches) setSidebarOpen(false);
   }
 
@@ -548,17 +660,13 @@ export function CopilotHome() {
   function changeConnectionMode(mode: ConnectionMode) {
     resetConversation();
     conversationHistory.startNewConversation();
+    hydratedConversationRef.current = null;
     copilotPreferences.setConnectionMode(mode);
+    setWorkspaceView("Chat");
   }
 
   useEffect(() => {
     function handleKeyboardShortcut(event: KeyboardEvent) {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
-        event.preventDefault();
-        searchInputRef.current?.focus();
-        return;
-      }
-
       const target = event.target as HTMLElement | null;
       const editing = target?.matches("input, textarea, select, [contenteditable='true']");
       if (event.key === "/" && !editing && !settingsOpen) {
@@ -591,9 +699,35 @@ export function CopilotHome() {
     setRightPanelCollapsed((collapsed) => !collapsed);
   }
 
+  function navigateTo(view: WorkspaceView) {
+    setWorkspaceView(view);
+    setSidebarOpen(false);
+    if (view === "Chat") window.requestAnimationFrame(() => composerRef.current?.focus());
+  }
+
+  const selectedCitations = useMemo(() => chatEntries
+    .flatMap((entry) => entry.citations ?? [])
+    .filter((citation, index, items) => items.findIndex((item) => item.id === citation.id) === index), [chatEntries]);
+
+  useEffect(() => {
+    if (historyIsLoading) return;
+    const conversationId = historyActiveConversationId;
+    if (!conversationId || hydratedConversationRef.current === conversationId) return;
+    const conversation = historyConversations.find((item) => item.id === conversationId);
+    if (!conversation) return;
+    hydratedConversationRef.current = conversationId;
+    loadConversation(restoreChatEntries(conversation.entries));
+  }, [historyActiveConversationId, historyConversations, historyIsLoading, loadConversation]);
+
+  useEffect(() => {
+    if (!historyActiveConversationId || historyIsLoading || busy) return;
+    updateHistoryTranscript(historyActiveConversationId, chatEntries);
+  }, [busy, chatEntries, historyActiveConversationId, historyIsLoading, updateHistoryTranscript]);
+
   return (
     <main
       className={`${styles.appShell} ${sidebarCollapsed ? styles.sidebarIsCollapsed : ""} ${rightPanelCollapsed ? styles.rightPanelIsCollapsed : ""}`}
+      data-accent-theme={accentTheme.theme}
     >
       <Sidebar
         collapsed={sidebarCollapsed}
@@ -610,6 +744,8 @@ export function CopilotHome() {
         onTogglePinConversation={conversationHistory.togglePinned}
         onToggleCollapsed={() => setSidebarCollapsed((collapsed) => !collapsed)}
         onOpenSettings={openSettings}
+        activeItem={workspaceView}
+        onNavigate={navigateTo}
       />
       <button
         className={`${styles.rightDrawerBackdrop} ${mobileInspectorOpen ? styles.rightDrawerBackdropVisible : ""}`}
@@ -624,11 +760,32 @@ export function CopilotHome() {
           onOpenInspector={openMobileInspector}
           onOpenSettings={openSettings}
           connectionMode={copilotPreferences.preferences.connectionMode}
-          searchInputRef={searchInputRef}
+          onConnectionModeChange={changeConnectionMode}
+          accentTheme={accentTheme.theme}
+          onAccentThemeChange={accentTheme.selectTheme}
         />
 
         <div className={styles.contentLayout}>
-          {chatEntries.length === 0 ? (
+          {workspaceView === "Sources" ? (
+            <section className={styles.sectionView} aria-labelledby="sources-view-title">
+              <header><BookOpen size={20} aria-hidden="true" /><span><h1 id="sources-view-title">Sources</h1><p>Official evidence for the selected conversation.</p></span></header>
+              <SourcesSection citations={selectedCitations} />
+            </section>
+          ) : workspaceView === "History" ? (
+            <section className={styles.sectionView} aria-labelledby="history-view-title">
+              <header><History size={20} aria-hidden="true" /><span><h1 id="history-view-title">Conversation history</h1><p>Open a saved conversation or manage its local record.</p></span></header>
+              <ConversationHistory
+                conversations={conversationHistory.conversations}
+                activeConversationId={conversationHistory.activeConversationId}
+                loading={conversationHistory.isLoading}
+                onSelect={selectConversation}
+                onRename={conversationHistory.renameConversation}
+                onDelete={deleteConversation}
+                onToggleArchive={toggleArchiveConversation}
+                onTogglePin={conversationHistory.togglePinned}
+              />
+            </section>
+          ) : chatEntries.length === 0 && conversationHistory.activeConversationId === null ? (
             <section className={styles.hero} aria-labelledby="home-heading">
               <div className={styles.heroCopy}>
                 <BrandMark />

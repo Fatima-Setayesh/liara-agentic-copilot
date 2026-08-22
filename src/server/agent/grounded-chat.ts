@@ -82,10 +82,124 @@ async function waitForRetriever(
 }
 
 function isPersian(question: string, userContext: UserContext | undefined): boolean {
-  return (
-    userContext?.preferredLanguage?.toLowerCase().startsWith("fa") === true ||
-    /[\u0600-\u06ff]/u.test(question)
-  );
+  const preferredLanguage = userContext?.preferredLanguage?.trim().toLowerCase();
+
+  if (preferredLanguage) {
+    return (
+      preferredLanguage === "fa" ||
+      preferredLanguage.startsWith("fa-") ||
+      preferredLanguage === "persian"
+    );
+  }
+
+  return /[\u0600-\u06ff]/u.test(question);
+}
+
+const GREETING_INTENTS = new Set([
+  "hello",
+  "hey",
+  "hi",
+  "good morning",
+  "good evening",
+  "\u0633\u0644\u0627\u0645",
+  "\u062f\u0631\u0648\u062f",
+  "\u0633\u0644\u0627\u0645 \u0639\u0644\u06cc\u06a9",
+  "\u0633\u0644\u0627\u0645 \u062e\u0648\u0628\u06cc",
+  "\u062e\u0648\u0628\u06cc",
+]);
+
+const THANKS_INTENTS = new Set([
+  "thanks",
+  "thank you",
+  "thank you very much",
+  "\u0645\u0645\u0646\u0648\u0646",
+  "\u0645\u0631\u0633\u06cc",
+  "\u0645\u062a\u0634\u06a9\u0631\u0645",
+  "\u062e\u06cc\u0644\u06cc \u0645\u0645\u0646\u0648\u0646",
+]);
+
+const ACKNOWLEDGEMENT_INTENTS = new Set([
+  "\u0628\u0627\u0634\u0647",
+  "\u0627\u0648\u06a9\u06cc",
+  "\u0627\u0648\u06a9\u06cc\u0647",
+  "ok",
+  "okay",
+  "got it",
+]);
+
+const META_CONVERSATION_PATTERNS = [
+  /^\u0647\u0646\u0648\u0632 (?:\u0633\u0648\u0627\u0644 ?\u0645\u0648|\u0633\u0648\u0627\u0644\u0645|\u0633\u0648\u0627\u0644 \u0631\u0627) \u0646\u06af\u0641\u062a\u0645(?: \u06a9\u0647)?$/u,
+  /^\u0647\u0646\u0648\u0632 \u0646\u06af\u0641\u062a\u0645 \u0686\u06cc \u0645\u06cc ?\u062e\u0648\u0627\u0645(?: \u06a9\u0647)?$/u,
+  /^\u0645\u06cc ?\u062a\u0648\u0646\u06cc \u06a9\u0645\u06a9\u0645 \u06a9\u0646\u06cc$/u,
+  /^(?:\u0641\u0639\u0644\u0627 \u0641\u0642\u0637 )?(?:\u06cc\u0647|\u06cc\u06a9) \u0633\u0648\u0627\u0644 \u062f\u0627\u0631\u0645$/u,
+  /^(?:\u0635\u0628\u0631 \u06a9\u0646|\u0627\u062f\u0627\u0645\u0647 \u0628\u062f\u0647)$/u,
+  /^can you help me$/u,
+  /^i (?:haven t|have not) asked my question yet$/u,
+  /^i have a question$/u,
+  /^(?:wait|continue)$/u,
+] as const;
+
+function normalizeConversationIntent(value: string): string {
+  return value
+    .normalize("NFKC")
+    .toLowerCase()
+    .replaceAll("\u064a", "\u06cc")
+    .replaceAll("\u0643", "\u06a9")
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function directConversationAnswer(
+  question: string,
+  userContext: UserContext | undefined,
+): string | null {
+  const normalizedQuestion = normalizeConversationIntent(question);
+  const persian = isPersian(question, userContext);
+
+  const greetingWithHelp = /^(?:\u0633\u0644\u0627\u0645|\u062f\u0631\u0648\u062f)(?: \u062e\u0648\u0628\u06cc)?(?: \u0645\u06cc ?\u062a\u0648\u0646\u06cc \u06a9\u0645\u06a9\u0645 \u06a9\u0646\u06cc)?$/u;
+
+  if (
+    GREETING_INTENTS.has(normalizedQuestion) ||
+    greetingWithHelp.test(normalizedQuestion)
+  ) {
+    return persian
+      ? "\u0633\u0644\u0627\u0645! \u062d\u062a\u0645\u0627\u064b \ud83d\ude42 \u0628\u06af\u0648 \u062f\u0631\u0628\u0627\u0631\u0647 Liara \u0686\u0647 \u06a9\u0645\u06a9\u06cc \u0645\u06cc\u200c\u062e\u0648\u0627\u06cc."
+      : "Hello! How can I help you with Liara?";
+  }
+
+  if (THANKS_INTENTS.has(normalizedQuestion)) {
+    return persian
+      ? "\u062e\u0648\u0627\u0647\u0634 \u0645\u06cc\u200c\u06a9\u0646\u0645! \u0627\u06af\u0631 \u062f\u0631\u0628\u0627\u0631\u0647\u0654 Liara \u0633\u0624\u0627\u0644 \u062f\u06cc\u06af\u0631\u06cc \u062f\u0627\u0631\u06cc\u062f\u060c \u062f\u0631 \u062e\u062f\u0645\u062a\u0645."
+      : "You're welcome! I'm here if you have another question about Liara.";
+  }
+
+  if (ACKNOWLEDGEMENT_INTENTS.has(normalizedQuestion)) {
+    return persian
+      ? "\u0628\u0627\u0634\u0647 \ud83d\ude42 \u0647\u0631 \u0648\u0642\u062a \u0622\u0645\u0627\u062f\u0647\u200c\u0627\u06cc \u0627\u062f\u0627\u0645\u0647 \u0628\u062f\u0647."
+      : "Okay — go ahead whenever you're ready.";
+  }
+
+  if (META_CONVERSATION_PATTERNS.some((pattern) => pattern.test(normalizedQuestion))) {
+    if (!persian) {
+      return "Of course — tell me your Liara question whenever you're ready.";
+    }
+
+    if (
+      normalizedQuestion.includes("\u0647\u0646\u0648\u0632") ||
+      normalizedQuestion.includes("\u0633\u0648\u0627\u0644 \u062f\u0627\u0631\u0645")
+    ) {
+      return "\u062f\u0631\u0633\u062a\u0647 \ud83d\ude04 \u0647\u0631 \u0648\u0642\u062a \u0622\u0645\u0627\u062f\u0647\u200c\u0627\u06cc\u060c \u0628\u06af\u0648 \u0686\u06cc \u0645\u06cc\u200c\u062e\u0648\u0627\u06cc \u062a\u0627 \u06a9\u0645\u06a9\u062a \u06a9\u0646\u0645.";
+    }
+
+    if (normalizedQuestion === "\u0635\u0628\u0631 \u06a9\u0646") {
+      return "\u062d\u062a\u0645\u0627\u064b\u060c \u0645\u0646\u062a\u0638\u0631\u0645 \ud83d\ude42";
+    }
+
+    return "\u062d\u062a\u0645\u0627\u064b \ud83d\ude42 \u0627\u062f\u0627\u0645\u0647 \u0628\u062f\u0647\u061b \u0622\u0645\u0627\u062f\u0647\u200c\u0627\u0645 \u06a9\u0645\u06a9\u062a \u06a9\u0646\u0645.";
+  }
+
+  return null;
 }
 
 function noEvidenceAnswer(
@@ -106,7 +220,8 @@ function retrievalText(request: ChatRequest): string {
     request.userContext?.liaraService,
   ].filter((value): value is string => value !== undefined);
 
-  return [request.message, ...contextTerms].join(" ");
+  const recentTerms = request.recentContext?.slice(-2).map((message) => message.content) ?? [];
+  return [request.message, ...recentTerms, ...contextTerms].join(" ");
 }
 
 export function createGroundedChatService(
@@ -117,6 +232,21 @@ export function createGroundedChatService(
 
     async answer(input: GroundedChatInput): Promise<GroundedChatResult> {
       input.signal.throwIfAborted();
+
+      const directAnswer = directConversationAnswer(
+        input.request.message,
+        input.request.userContext,
+      );
+
+      if (directAnswer) {
+        return Object.freeze({
+          kind: "no_evidence",
+          answer: directAnswer,
+          citations: Object.freeze([]),
+          evidenceStatus: "none",
+        });
+      }
+
       let outcome: RetrievalOutcome;
 
       try {
@@ -175,6 +305,7 @@ export function createGroundedChatService(
           question: input.request.message,
           context,
           userContext: input.request.userContext,
+          recentContext: input.request.recentContext,
         }),
         maxOutputTokens: dependencies.aiConfig.maxOutputTokens,
         maxRetries: 2,

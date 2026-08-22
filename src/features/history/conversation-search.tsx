@@ -1,5 +1,7 @@
 import { Search, X } from "lucide-react";
 
+import { getTextDirection } from "@/features/chat/text-direction";
+
 import styles from "./conversation-history.module.css";
 
 type ConversationSearchProps = {
@@ -13,6 +15,7 @@ export function ConversationSearch({ value, onChange }: ConversationSearchProps)
       <Search size={14} strokeWidth={1.8} aria-hidden="true" />
       <input
         value={value}
+        dir={getTextDirection(value)}
         onChange={(event) => onChange(event.target.value)}
         placeholder="Search conversations..."
         aria-label="Search conversations"

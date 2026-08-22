@@ -140,7 +140,7 @@
   textarea:focus-visible,
   select:focus-visible,
   a:focus-visible {
-    outline: 2px solid #5cf2d5;
+    outline: 2px solid var(--accent-bright);
     outline-offset: 3px;
   }
 }

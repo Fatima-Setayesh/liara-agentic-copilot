@@ -1,5 +1,7 @@
 import { Check, Circle, LoaderCircle, RadioTower } from "lucide-react";
 
+import { MeshGradientSVG } from "@/components/ui/shader-svg";
+
 import styles from "./streaming-states.module.css";
 
 type AgentActivityTimelineProps = {
@@ -52,6 +54,7 @@ export function AgentActivityTimeline({ activeStep, mode = "live" }: AgentActivi
       <ol className={styles.activityList}>
         {steps.map((step, index) => {
           const state = index < activeStep ? "complete" : index === activeStep ? "active" : "pending";
+          const showMascot = mode === "live" && state === "active" && index >= 1;
 
           return (
             <li data-state={state} key={step.label}>
@@ -64,9 +67,16 @@ export function AgentActivityTimeline({ activeStep, mode = "live" }: AgentActivi
                   <Circle size={11} strokeWidth={1.7} />
                 )}
               </span>
-              <span className={styles.activityCopy}>
-                <strong>{step.label}</strong>
-                <small>{step.detail}</small>
+              <span className={styles.activityCopy} data-mascot={showMascot || undefined}>
+                <span className={styles.activityText}>
+                  <strong>{step.label}</strong>
+                  <small>{step.detail}</small>
+                </span>
+                {showMascot && (
+                  <span className={styles.searchingMascot} aria-hidden="true">
+                    <MeshGradientSVG />
+                  </span>
+                )}
               </span>
             </li>
           );

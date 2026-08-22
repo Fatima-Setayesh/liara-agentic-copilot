@@ -12,7 +12,7 @@ import {
   type CopilotPreferences,
 } from "./copilot-preferences-model";
 
-const PREFERENCES_STORAGE_KEY = "liara-copilot-preferences-v1";
+const PREFERENCES_STORAGE_KEY = "liara-copilot-preferences-v2";
 
 export function useCopilotPreferences() {
   const [preferences, setPreferences] = useState<CopilotPreferences>(defaultCopilotPreferences);

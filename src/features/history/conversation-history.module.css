@@ -14,7 +14,7 @@
   gap: 8px;
   padding: 0 10px;
   color: #66777b;
-  border: 1px solid rgba(93, 166, 168, .13);
+  border: 1px solid var(--accent-muted);
   border-radius: 10px;
   background: rgba(3, 14, 17, .64);
   box-shadow: inset 0 1px rgba(255, 255, 255, .018);
@@ -22,10 +22,10 @@
 }
 
 .conversationSearch:focus-within {
-  color: #52e0d0;
-  border-color: rgba(72, 219, 204, .31);
+  color: var(--accent-bright, #52e0d0);
+  border-color: rgba(var(--accent-rgb, 72, 219, 204), .31);
   background: rgba(6, 27, 30, .8);
-  box-shadow: 0 0 0 3px rgba(57, 219, 205, .035), 0 0 18px rgba(50, 212, 202, .06);
+  box-shadow: 0 0 0 3px var(--accent-muted), 0 0 18px var(--accent-glow);
 }
 
 .conversationSearch input {
@@ -38,6 +38,7 @@
   outline: 0;
   background: transparent;
   font-size: 12px;
+  text-align: start;
 }
 
 .conversationSearch input::placeholder { color: #526166; }
@@ -63,7 +64,7 @@
   cursor: pointer;
 }
 
-.conversationSearch button:hover { color: #63e5d4; background: rgba(21, 75, 72, .26); }
+.conversationSearch button:hover { color: var(--accent-bright); background: var(--accent-surface); }
 
 .historyFilters {
   display: flex;
@@ -89,7 +90,7 @@
 }
 
 .historyFilters button:hover { color: #afbfbe; background: rgba(12, 42, 44, .35); }
-.historyFilters button[data-active="true"] { color: #52e3d1; border-color: rgba(72, 210, 198, .17); background: rgba(16, 70, 67, .3); }
+.historyFilters button[data-active="true"] { color: var(--accent-bright); border-color: var(--accent-border); background: var(--accent-surface); }
 
 .historyScroll {
   min-height: 0;
@@ -97,14 +98,14 @@
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
-  scrollbar-color: rgba(78, 212, 202, .24) transparent;
+  scrollbar-color: var(--accent-border) transparent;
   scrollbar-width: thin;
   scroll-behavior: smooth;
 }
 
 .historyScroll::-webkit-scrollbar { width: 5px; }
 .historyScroll::-webkit-scrollbar-track { background: transparent; }
-.historyScroll::-webkit-scrollbar-thumb { border-radius: 999px; background: rgba(78, 212, 202, .2); }
+.historyScroll::-webkit-scrollbar-thumb { border-radius: 999px; background: var(--accent-border); }
 
 .historyGroup + .historyGroup { margin-top: 14px; }
 
@@ -121,8 +122,8 @@
   text-transform: uppercase;
 }
 
-.historyGroup h3 svg { color: #44cfc0; }
-.historyGroup h3 span { display: grid; min-width: 18px; height: 18px; margin-left: auto; place-items: center; color: #536367; border: 1px solid rgba(99, 151, 153, .12); border-radius: 999px; font-size: 9px; }
+.historyGroup h3 svg { color: var(--accent-primary, #44cfc0); }
+.historyGroup h3 span { display: grid; min-width: 18px; height: 18px; margin-left: auto; place-items: center; color: #536367; border: 1px solid var(--accent-muted); border-radius: 999px; font-size: 9px; }
 .historyGroupList { display: grid; gap: 3px; }
 
 .conversationItem {
@@ -144,8 +145,8 @@
   width: 1px;
   opacity: 0;
   border-radius: 999px;
-  background: #45e0d0;
-  box-shadow: 0 0 10px rgba(69, 224, 208, .65);
+  background: var(--accent-primary, #45e0d0);
+  box-shadow: 0 0 10px rgba(var(--accent-rgb, 69, 224, 208), .55);
   transition: opacity 180ms ease;
 }
 
@@ -153,9 +154,9 @@
 .conversationItem:focus-within,
 .conversationItem[data-active="true"] {
   transform: translateY(-1px);
-  border-color: rgba(74, 205, 195, .17);
-  background: linear-gradient(100deg, rgba(18, 80, 77, .3), rgba(7, 28, 32, .58));
-  box-shadow: 0 8px 20px rgba(0, 0, 0, .14), 0 0 17px rgba(48, 224, 214, .045);
+  border-color: var(--accent-border);
+  background: linear-gradient(100deg, var(--accent-surface), rgba(7, 20, 24, .62));
+  box-shadow: 0 8px 20px rgba(0, 0, 0, .14), 0 0 17px var(--accent-muted);
 }
 
 .conversationItem[data-active="true"]::before { opacity: 1; }
@@ -183,20 +184,22 @@
   height: 24px;
   place-items: center;
   color: #678084;
-  border: 1px solid rgba(96, 153, 156, .13);
+  border: 1px solid var(--accent-muted);
   border-radius: 7px;
   background: rgba(13, 37, 40, .4);
   transition: color 180ms ease, border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
 }
 
 .conversationItem:hover .conversationIcon,
-.conversationItem[data-active="true"] .conversationIcon { color: #54dfcf; border-color: rgba(75, 211, 199, .23); background: rgba(17, 72, 69, .33); box-shadow: 0 0 13px rgba(49, 215, 202, .07); }
+.conversationItem[data-active="true"] .conversationIcon { color: var(--accent-bright, #54dfcf); border-color: rgba(var(--accent-rgb, 46, 215, 241), .23); background: rgba(var(--accent-rgb, 46, 215, 241), .1); box-shadow: 0 0 13px rgba(var(--accent-rgb, 46, 215, 241), .08); }
 
 .conversationCopy { display: grid; min-width: 0; gap: 3px; }
-.conversationCopy strong { overflow: hidden; color: #adb9bb; font-size: 12px; font-weight: 540; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap; }
+.conversationCopy strong { display: block; overflow: hidden; color: #adb9bb; font-size: 12px; font-weight: 540; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap; }
+.conversationCopy strong[dir="rtl"] { text-align: right; }
+.conversationCopy strong[dir="ltr"] { text-align: left; }
 .conversationCopy small { color: #536368; font-size: 10px; }
 .conversationItem[data-active="true"] .conversationCopy strong { color: #d8e5e4; }
-.pinnedIcon { color: #52daca; }
+.pinnedIcon { color: var(--accent-primary, #52daca); }
 
 .conversationActions {
   position: absolute;
@@ -223,7 +226,7 @@
 .conversationItem:hover .conversationMenuTrigger,
 .conversationItem:focus-within .conversationMenuTrigger,
 .conversationItem[data-active="true"] .conversationMenuTrigger { opacity: 1; }
-.conversationMenuTrigger:hover { color: #5ce4d3; border-color: rgba(77, 208, 197, .16); background: rgba(14, 57, 57, .44); }
+.conversationMenuTrigger:hover { color: var(--accent-bright); border-color: var(--accent-border); background: var(--accent-surface); }
 
 .conversationMenu {
   position: absolute;
@@ -234,10 +237,10 @@
   width: 142px;
   gap: 2px;
   padding: 6px;
-  border: 1px solid rgba(88, 176, 176, .2);
+  border: 1px solid var(--accent-border);
   border-radius: 10px;
   background: linear-gradient(145deg, rgba(9, 27, 30, .99), rgba(3, 14, 17, .99));
-  box-shadow: 0 18px 42px rgba(0, 0, 0, .42), 0 0 20px rgba(49, 209, 197, .055), inset 0 1px rgba(255, 255, 255, .035);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, .42), 0 0 20px var(--accent-muted), inset 0 1px rgba(255, 255, 255, .035);
   backdrop-filter: blur(22px);
   animation: menuEnter 180ms cubic-bezier(.22, .8, .24, 1) both;
 }
@@ -259,18 +262,18 @@
 }
 
 .conversationMenu button:hover,
-.conversationMenu button:focus-visible { color: #e0f6f2; background: rgba(21, 77, 73, .38); }
+.conversationMenu button:focus-visible { color: var(--accent-text); background: var(--accent-surface); }
 .conversationMenu .deleteConversationAction { color: #c88578; }
 .conversationMenu .deleteConversationAction[data-confirming="true"] { color: #ffd6cc; background: rgba(108, 40, 34, .38); }
 
 .renameConversation { min-height: 45px; padding: 7px; }
-.renameConversation input { width: 100%; height: 31px; padding: 0 8px; color: #d8e5e3; border: 1px solid rgba(76, 220, 205, .32); border-radius: 7px; outline: 0; background: rgba(5, 25, 28, .9); font-size: 12px; box-shadow: 0 0 0 3px rgba(56, 217, 202, .035); }
+.renameConversation input { width: 100%; height: 31px; padding: 0 8px; color: #d8e5e3; border: 1px solid var(--accent-border); border-radius: 7px; outline: 0; background: rgba(5, 18, 22, .9); font-size: 12px; text-align: start; box-shadow: 0 0 0 3px var(--accent-muted); }
 
 .historyLoading { display: grid; gap: 7px; padding-top: 4px; }
-.historyLoading > span { display: grid; min-height: 48px; grid-template-columns: 26px minmax(0, 1fr); align-items: center; gap: 9px; padding: 7px; border: 1px solid rgba(73, 144, 147, .08); border-radius: 9px; background: rgba(4, 19, 22, .42); }
+.historyLoading > span { display: grid; min-height: 48px; grid-template-columns: 26px minmax(0, 1fr); align-items: center; gap: 9px; padding: 7px; border: 1px solid var(--accent-muted); border-radius: 9px; background: rgba(4, 19, 22, .42); }
 .historyLoading i { display: block; width: 25px; height: 25px; border-radius: 7px; background: rgba(38, 90, 92, .22); }
 .historyLoading b { position: relative; display: block; width: var(--history-line); height: 6px; overflow: hidden; border-radius: 999px; background: rgba(47, 91, 94, .25); }
-.historyLoading b::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(81, 221, 208, .35), transparent); transform: translateX(-100%); animation: historyScan 1.8s ease-in-out var(--history-delay) infinite; }
+.historyLoading b::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, var(--accent-border), transparent); transform: translateX(-100%); animation: historyScan 1.8s ease-in-out var(--history-delay) infinite; }
 
 .emptyHistory {
   display: grid;
@@ -282,17 +285,17 @@
   text-align: center;
 }
 
-.emptyHistory > span { display: grid; width: 38px; height: 38px; place-items: center; color: #5adaca; border: 1px solid rgba(74, 208, 196, .19); border-radius: 10px; background: rgba(17, 66, 64, .22); }
+.emptyHistory > span { display: grid; width: 38px; height: 38px; place-items: center; color: var(--accent-primary); border: 1px solid var(--accent-border); border-radius: 10px; background: var(--accent-surface); }
 .emptyHistory strong { margin-top: 11px; color: #aebbbc; font-size: 12px; font-weight: 570; }
 .emptyHistory p { margin: 5px 0 0; color: #5f7074; font-size: 10px; line-height: 1.55; }
-.emptyHistory button { margin-top: 10px; padding: 6px 9px; color: #55daca; border: 1px solid rgba(75, 206, 195, .17); border-radius: 7px; background: rgba(15, 62, 60, .24); font: inherit; font-size: 10px; cursor: pointer; }
+.emptyHistory button { margin-top: 10px; padding: 6px 9px; color: var(--accent-bright); border: 1px solid var(--accent-border); border-radius: 7px; background: var(--accent-surface); font: inherit; font-size: 10px; cursor: pointer; }
 
 .conversationSearch button:focus-visible,
 .historyFilters button:focus-visible,
 .conversationSelect:focus-visible,
 .conversationMenuTrigger:focus-visible,
 .emptyHistory button:focus-visible {
-  outline: 2px solid rgba(103, 245, 215, .9);
+  outline: 2px solid var(--accent-ring);
   outline-offset: 2px;
 }
 

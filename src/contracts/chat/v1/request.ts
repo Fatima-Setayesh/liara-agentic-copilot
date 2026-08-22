@@ -8,6 +8,18 @@ const opaqueIdSchema = z
   .max(128)
   .regex(/^[A-Za-z0-9][A-Za-z0-9._:-]*$/, "Must be an opaque identifier");
 
+export const recentConversationMessageSchema = z.strictObject({
+  role: z.enum(["user", "assistant"]),
+  content: z.string().trim().min(1).max(2_000),
+});
+
+export const recentConversationContextSchema = z.array(recentConversationMessageSchema)
+  .max(6)
+  .refine(
+    (messages) => messages.reduce((total, message) => total + message.content.length, 0) <= 6_000,
+    "Recent conversation context exceeds its character budget",
+  );
+
 export const userContextSchema = z.strictObject({
   framework: z.string().trim().min(1).max(80).optional(),
   runtime: z.string().trim().min(1).max(80).optional(),
@@ -23,8 +35,10 @@ export const chatRequestSchema = z.strictObject({
   conversationId: opaqueIdSchema.optional(),
   clientRequestId: opaqueIdSchema.optional(),
   message: z.string().trim().min(1).max(MAX_CHAT_MESSAGE_CHARACTERS),
+  recentContext: recentConversationContextSchema.optional(),
   userContext: userContextSchema.optional(),
 });
 
 export type UserContext = z.infer<typeof userContextSchema>;
 export type ChatRequest = z.infer<typeof chatRequestSchema>;
+export type RecentConversationMessage = z.infer<typeof recentConversationMessageSchema>;

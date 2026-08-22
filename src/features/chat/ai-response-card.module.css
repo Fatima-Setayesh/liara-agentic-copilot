@@ -1,18 +1,18 @@
 .presentationGrid {
   display: grid;
   min-width: 0;
-  grid-template-columns: minmax(0, 1fr) minmax(218px, 28%);
+  grid-template-columns: minmax(0, 1fr) minmax(200px, 27%);
   align-items: start;
-  gap: 14px;
+  gap: 12px;
   margin-top: 6px;
 }
 
 .responseSurface,
 .agentStatus,
 .recommendedActions {
-  border: 1px solid rgba(72, 198, 192, .2);
+  border: 1px solid var(--accent-border);
   background:
-    radial-gradient(circle at 86% 4%, rgba(32, 150, 139, .08), transparent 29%),
+    radial-gradient(circle at 86% 4%, var(--accent-muted), transparent 29%),
     linear-gradient(145deg, rgba(7, 27, 30, .93), rgba(3, 15, 18, .94));
   box-shadow: 0 22px 56px rgba(0, 0, 0, .24), inset 0 1px rgba(255, 255, 255, .025);
   backdrop-filter: blur(20px);
@@ -21,8 +21,8 @@
 .responseSurface {
   display: grid;
   min-width: 0;
-  gap: 12px;
-  padding: 15px;
+  gap: 11px;
+  padding: 14px;
   border-radius: 15px;
 }
 
@@ -33,11 +33,11 @@
 }
 
 .responseSection {
-  --section-accent: #4ce7d2;
-  --section-accent-soft: rgba(76, 231, 210, .12);
+  --section-accent: var(--accent-primary, #4ce7d2);
+  --section-accent-soft: var(--accent-surface);
   min-width: 0;
-  padding: 16px 17px;
-  border: 1px solid rgba(87, 166, 169, .17);
+  padding: 14px 15px;
+  border: 1px solid var(--accent-muted);
   border-radius: 12px;
   background: linear-gradient(145deg, rgba(8, 28, 31, .76), rgba(4, 18, 21, .72));
   box-shadow: inset 0 1px rgba(255, 255, 255, .02);
@@ -62,8 +62,8 @@
 }
 
 .success {
-  --section-accent: #39dfc9;
-  --section-accent-soft: rgba(57, 223, 201, .11);
+  --section-accent: var(--accent-primary, #39dfc9);
+  --section-accent-soft: var(--accent-surface);
 }
 
 .sectionHeader {
@@ -107,7 +107,7 @@
 .codeBlock {
   margin-top: 15px;
   overflow: hidden;
-  border: 1px solid rgba(73, 170, 169, .19);
+  border: 1px solid var(--accent-muted);
   border-radius: 11px;
   background: rgba(1, 10, 13, .9);
   box-shadow: 0 13px 30px rgba(0, 0, 0, .18), inset 0 1px rgba(255, 255, 255, .018);
@@ -124,7 +124,7 @@
   justify-content: space-between;
   gap: 14px;
   padding: 0 10px 0 14px;
-  border-bottom: 1px solid rgba(83, 151, 154, .13);
+  border-bottom: 1px solid var(--accent-muted);
   background: rgba(8, 25, 28, .8);
 }
 
@@ -137,7 +137,7 @@
 
 .fileIdentity strong {
   overflow: hidden;
-  color: #51e1cf;
+  color: var(--accent-primary, #51e1cf);
   font-size: 11px;
   font-weight: 590;
   text-overflow: ellipsis;
@@ -147,7 +147,7 @@
 .fileIdentity > span {
   padding: 3px 6px;
   color: #68777b;
-  border: 1px solid rgba(103, 151, 153, .13);
+  border: 1px solid var(--accent-muted);
   border-radius: 5px;
   background: rgba(13, 34, 36, .68);
   font-size: 10px;
@@ -162,7 +162,7 @@
   gap: 7px;
   padding: 0 9px;
   color: #929fa2;
-  border: 1px solid rgba(100, 159, 161, .16);
+  border: 1px solid var(--accent-muted);
   border-radius: 7px;
   background: rgba(9, 23, 26, .86);
   font: inherit;
@@ -173,9 +173,9 @@
 
 .codeHeader button:hover {
   transform: translateY(-1px);
-  color: #72efda;
-  border-color: rgba(79, 223, 206, .32);
-  background: rgba(12, 43, 43, .86);
+  color: var(--accent-bright, #72efda);
+  border-color: var(--accent-border);
+  background: var(--accent-surface);
 }
 
 .codeBody {
@@ -199,8 +199,8 @@
 }
 
 .importantLine {
-  border-left-color: rgba(58, 222, 203, .72);
-  background: linear-gradient(90deg, rgba(41, 161, 150, .13), transparent 78%);
+  border-left-color: var(--accent-primary);
+  background: linear-gradient(90deg, var(--accent-muted), transparent 78%);
 }
 
 .lineNumber {
@@ -211,7 +211,7 @@
 }
 
 .lineContent { padding-left: 10px; white-space: pre; }
-.tokenproperty { color: #59d8d2; }
+.tokenproperty { color: var(--accent-primary); }
 .tokenstring { color: #ed7e9d; }
 .tokenkeyword { color: #ae95f4; }
 .tokenpunctuation { color: #9daaad; }
@@ -224,8 +224,8 @@
 }
 
 .agentStatus {
-  padding: 18px 16px;
-  border-color: rgba(61, 210, 199, .28);
+  padding: 16px 14px;
+  border-color: var(--accent-border);
   border-radius: 15px;
 }
 
@@ -235,20 +235,20 @@
   min-width: 0;
   align-items: center;
   gap: 8px;
-  color: #43e5d4;
+  color: var(--accent-primary, #43e5d4);
 }
 
 .agentStatus h3,
 .recommendedActions h3 {
   margin: 0;
-  color: #4be8d5;
+  color: var(--accent-bright, #4be8d5);
   font-size: 12px;
   font-weight: 610;
 }
 
 .statusList {
   display: grid;
-  margin: 19px 0 0;
+  margin: 17px 0 0;
   padding: 0;
   list-style: none;
 }
@@ -257,7 +257,7 @@
   position: relative;
   display: grid;
   min-width: 0;
-  min-height: 62px;
+  min-height: 56px;
   grid-template-columns: 28px minmax(0, 1fr);
   align-items: start;
   gap: 9px;
@@ -270,7 +270,7 @@
   bottom: 3px;
   left: 13px;
   width: 1px;
-  background: linear-gradient(180deg, rgba(52, 221, 205, .58), rgba(52, 221, 205, .08));
+  background: linear-gradient(180deg, var(--accent-primary), var(--accent-muted));
 }
 
 .statusMarker {
@@ -280,25 +280,25 @@
   width: 28px;
   height: 28px;
   place-items: center;
-  color: #062421;
-  border: 1px solid rgba(80, 236, 215, .44);
+  color: #091014;
+  border: 1px solid var(--accent-border);
   border-radius: 50%;
-  background: linear-gradient(145deg, #65ead1, #28bfb8);
-  box-shadow: 0 0 14px rgba(48, 216, 202, .14);
+  background: linear-gradient(145deg, var(--accent-soft, #65ead1), var(--accent-deep, #28bfb8));
+  box-shadow: 0 0 14px var(--accent-glow);
 }
 
 .statusList li[data-state="waiting"] .statusMarker {
-  color: #51e5d4;
-  border-color: rgba(66, 224, 207, .6);
+  color: var(--accent-primary, #51e5d4);
+  border-color: var(--accent-ring);
   background: rgba(5, 29, 32, .96);
   animation: waitingPulse 1.8s ease-in-out infinite;
 }
 
 .statusList li[data-state="working"] .statusMarker {
-  color: #062421;
-  border-color: rgba(80, 236, 215, .62);
-  background: linear-gradient(145deg, #71f0d7, #2fc6bf);
-  box-shadow: 0 0 18px rgba(48, 216, 202, .22);
+  color: #091014;
+  border-color: var(--accent-ring);
+  background: linear-gradient(145deg, var(--accent-soft, #71f0d7), var(--accent-deep, #2fc6bf));
+  box-shadow: 0 0 18px var(--accent-glow);
 }
 
 .statusList li[data-state="working"] .statusMarker svg {
@@ -314,7 +314,7 @@
 
 .statusList li[data-state="pending"] .statusMarker {
   color: #56676b;
-  border-color: rgba(93, 141, 145, .24);
+  border-color: var(--accent-muted);
   background: rgba(5, 22, 25, .94);
   box-shadow: none;
 }
@@ -335,7 +335,7 @@
 
 .statusCopy small { color: #7c898c; font-size: 10px; line-height: 1.35; }
 .statusList li[data-state="waiting"] small { color: #c49d57; }
-.statusList li[data-state="working"] small { color: #68cfbf; }
+.statusList li[data-state="working"] small { color: var(--accent-bright, #68cfbf); }
 .statusList li[data-state="failed"] small { color: #e29d8b; }
 .statusList li[data-state="pending"] { opacity: .62; }
 
@@ -356,7 +356,7 @@
   gap: 7px;
   padding: 0 10px;
   color: #829095;
-  border: 1px solid rgba(92, 154, 158, .15);
+  border: 1px solid var(--accent-muted);
   border-radius: 9px;
   background: rgba(5, 18, 21, .75);
   font: inherit;
@@ -368,18 +368,18 @@
 .responseInteractions button:hover,
 .responseInteractions .interactionActive {
   transform: translateY(-2px);
-  color: #65ebd7;
-  border-color: rgba(76, 220, 204, .32);
-  background: rgba(13, 48, 48, .74);
+  color: var(--accent-bright, #65ebd7);
+  border-color: var(--accent-border);
+  background: var(--accent-surface);
   box-shadow: 0 8px 20px rgba(0, 0, 0, .2);
 }
 
 .copyResponse { min-width: 112px !important; }
-.interactionStatus { min-width: 80px; color: #67d9cb; font-size: 10px; }
+.interactionStatus { min-width: 80px; color: var(--accent-primary, #67d9cb); font-size: 10px; }
 
 .recommendedActions {
   margin-top: 13px;
-  padding: 14px;
+  padding: 12px;
   border-radius: 13px;
 }
 
@@ -400,7 +400,7 @@
   gap: 7px;
   padding: 0 10px;
   color: #aebabc;
-  border: 1px solid rgba(83, 168, 169, .16);
+  border: 1px solid var(--accent-muted);
   border-radius: 9px;
   background: rgba(6, 22, 25, .68);
   font: inherit;
@@ -414,14 +414,14 @@
 .actionGrid button:hover,
 .actionGrid a:hover {
   transform: translateY(-2px);
-  color: #ebfffb;
-  border-color: rgba(72, 221, 204, .34);
-  background: linear-gradient(145deg, rgba(12, 48, 47, .82), rgba(6, 28, 31, .8));
-  box-shadow: 0 10px 24px rgba(0, 0, 0, .2), 0 0 18px rgba(44, 210, 194, .07);
+  color: var(--accent-text);
+  border-color: var(--accent-border);
+  background: linear-gradient(145deg, var(--accent-surface), rgba(6, 22, 26, .8));
+  box-shadow: 0 10px 24px rgba(0, 0, 0, .2), 0 0 18px var(--accent-muted);
 }
 
 .actionGrid button svg,
-.actionGrid a svg:first-child { color: #49ddcc; }
+.actionGrid a svg:first-child { color: var(--accent-primary, #49ddcc); }
 .actionGrid span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .actionFeedback {
@@ -435,7 +435,7 @@
 .responseInteractions button:focus-visible,
 .actionGrid button:focus-visible,
 .actionGrid a:focus-visible {
-  outline: 2px solid rgba(103, 245, 215, .9);
+  outline: 2px solid var(--accent-ring);
   outline-offset: 3px;
 }
 
@@ -444,8 +444,8 @@
 }
 
 @keyframes waitingPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(54, 219, 203, 0); }
-  50% { box-shadow: 0 0 0 4px rgba(54, 219, 203, .06), 0 0 15px rgba(54, 219, 203, .14); }
+  0%, 100% { box-shadow: 0 0 0 0 transparent; }
+  50% { box-shadow: 0 0 0 4px var(--accent-muted), 0 0 15px var(--accent-glow); }
 }
 
 @keyframes statusSpin {
