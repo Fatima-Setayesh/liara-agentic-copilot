@@ -80,11 +80,11 @@ export function ChatWorkspace({ entries, composer, citations = [], onSuggestedPr
   return (
     <section className={styles.chatWorkspace} aria-label="Chat workspace">
       <div className={styles.conversationStream} ref={streamRef}>
-        <div className={styles.conversationInner}>
+        <div className={entries.length === 0 ? `${styles.conversationInner} ${styles.conversationInnerEmpty}` : styles.conversationInner}>
           {entries.length === 0 ? (
             <div className={styles.emptyTranscript} role="status">
-              <strong>No saved transcript is available for this conversation.</strong>
-              <p>This legacy history item was created before full message persistence. You can continue it below or start a new chat.</p>
+              <strong>This conversation has no saved messages.</strong>
+              <p>You can continue here, or start a new conversation from the sidebar.</p>
             </div>
           ) : entries.map((entry, index) => (
             <div className={styles.exchange} key={entry.id}>
