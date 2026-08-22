@@ -226,15 +226,11 @@
   gap: 4px;
 }
 
-.sourceCardCopy[dir="rtl"],
-.sourceDetailsPanel[dir="rtl"] {
-  text-align: right;
-}
+.sourceCardCopy > :is(strong, small)[dir="rtl"],
+.sourceDetailsPanel :is(h4, p, dd)[dir="rtl"] { text-align: right; }
 
-.sourceCardCopy[dir="ltr"],
-.sourceDetailsPanel[dir="ltr"] {
-  text-align: left;
-}
+.sourceCardCopy > :is(strong, small)[dir="ltr"],
+.sourceDetailsPanel :is(h4, p, dd)[dir="ltr"] { text-align: left; }
 
 .sourceCardCopy > strong,
 .sourceCardCopy > small {
@@ -243,7 +239,7 @@
   white-space: nowrap;
 }
 
-.sourceCardCopy > strong { color: #d7e1e1; font-size: 10px; font-weight: 580; }
+.sourceCardCopy > strong { display: block; color: #d7e1e1; font-size: 10px; font-weight: 580; }
 .sourceCardCopy > small { color: #738287; font-size: 9px; }
 
 .sourceLabels {
@@ -336,6 +332,8 @@
 .contextFacts dt { display: inline-flex; align-items: center; gap: 5px; color: #65767a; font-size: 8px; }
 .documentationFacts dd,
 .contextFacts dd { margin: 0; overflow: hidden; color: #aebbbc; font-size: 9px; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
+
+.documentationFacts dd[dir="ltr"] { direction: ltr; unicode-bidi: isolate; }
 
 .sourceDetailsPanel > a {
   display: inline-flex;

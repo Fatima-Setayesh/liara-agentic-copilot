@@ -29,10 +29,10 @@ export function SourceCard({ item, selected, onSelect }: SourceCardProps) {
       <span className={styles.sourceCardIcon} aria-hidden="true">
         <SourceIcon kind={item.kind} />
       </span>
-      <span className={styles.sourceCardCopy} dir={getTextDirection(`${item.title} ${item.descriptor}`)}>
-        <strong>{item.title}</strong>
-        <small>{item.descriptor}</small>
-        <span className={styles.sourceLabels}>
+      <span className={styles.sourceCardCopy}>
+        <strong dir={getTextDirection(item.title)}>{item.title}</strong>
+        <small dir={getTextDirection(item.descriptor)}>{item.descriptor}</small>
+        <span className={styles.sourceLabels} dir="ltr">
           <i>{item.typeLabel}</i>
           <i className={styles.trustLabel}>
             <ShieldCheck size={11} aria-hidden="true" />
