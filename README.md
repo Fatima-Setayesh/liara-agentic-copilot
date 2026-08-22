@@ -2,279 +2,225 @@
 
 # Liara Agentic Developer Copilot
 
-### Build, deploy, and debug with grounded answers from official Liara documentation.
+> A grounded, citation-first AI copilot for deploying, debugging, and operating applications on Liara.
 
 [![CI](https://github.com/Fatima-Setayesh/liara-agentic-copilot/actions/workflows/ci.yml/badge.svg)](https://github.com/Fatima-Setayesh/liara-agentic-copilot/actions/workflows/ci.yml)
+![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=081018)
+![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-24.x-5FA04E?logo=nodedotjs&logoColor=white)
 ![pnpm](https://img.shields.io/badge/pnpm-10.x-F69220?logo=pnpm&logoColor=white)
-![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
+![Vitest](https://img.shields.io/badge/Vitest-4-6E9F18?logo=vitest&logoColor=white)
 
-**[Official Liara Docs](https://docs.liara.ir/)** · **[Architecture](docs/architecture/ARCHITECTURE.md)** · **[Product Specification](SPEC.md)** · **[Judging Matrix](docs/JUDGING-MATRIX.md)**
+**[Official Liara Docs](https://docs.liara.ir/)** · **[Architecture](docs/architecture/ARCHITECTURE.md)** · **[Specification](SPEC.md)** · **[Judging Matrix](docs/JUDGING-MATRIX.md)**
 
 </div>
 
-![Liara Copilot landing experience](docs/assets/screenshots/hero-cyan.png)
+<p align="center">
+  <img src="docs/assets/readme/hero-violet.png" alt="Liara Agentic Developer Copilot in the Violet theme" width="100%" />
+</p>
 
 ## Overview
 
-Liara Agentic Developer Copilot is a production-minded support assistant for developers building on [Liara](https://liara.ir/). It combines authoritative documentation retrieval, an agentic troubleshooting flow, AvalAI-powered generation, traceable citations, and a polished bilingual interface.
+Liara Agentic Developer Copilot helps developers understand, configure, deploy, and troubleshoot applications on [Liara](https://liara.ir/). It brings official documentation retrieval, grounded LLM responses, traceable citations, developer context, conversation continuity, and operational guidance into one focused interface.
 
-The product is deliberately more than a branded LLM wrapper. Liara-specific claims are grounded in the official [`liara-cloud/docs`](https://github.com/liara-cloud/docs) corpus, sources are created by the backend, and the assistant abstains when reliable evidence is unavailable instead of inventing commands or platform behavior.
+Unlike a generic chatbot, the backend owns evidence selection and source metadata. Liara-specific claims are grounded in a revision-pinned copy of the official [`liara-cloud/docs`](https://github.com/liara-cloud/docs) repository. When reliable evidence is unavailable, the assistant says so instead of fabricating commands, platform behavior, or citations.
 
-## Product highlights
+## Project status
 
-| Area | Implemented capability |
+**Feature-complete and deployment-ready.** Grounded chat, the product interface, conversation history, Sources, personalization, RTL/LTR support, accent themes, and backend production hardening are implemented. The latest release validation passed lint, strict type checking, 165 tests with 1 intentional skip, and a production build.
+
+Production deployment has **not** yet been performed. Liara-specific runtime, streaming, and proxy behavior still require a live deployment validation.
+
+## Highlights
+
+| Capability | What it provides |
 | --- | --- |
-| **Grounded assistance** | Answers are generated from bounded, ranked evidence retrieved from official Liara MDX documentation. |
-| **Agentic troubleshooting** | Real `understanding`, `retrieving`, and `generating` states make multi-step work visible without exposing hidden chain-of-thought. |
-| **Traceable citations** | Every citation preserves its official URL, document path, heading, snippet, category, and stable source identity when available. |
-| **Honest evidence handling** | Responses explicitly distinguish `sufficient`, `partial`, and `none` evidence; no result is not disguised as a backend failure. |
-| **Bilingual query understanding** | Deterministic Persian/English normalization handles mixed-language developer terms, common aliases, and conversational phrasing without an extra classification model call. |
-| **Streaming chat** | `POST /api/chat` streams text, activity, citations, suggestions, safe errors, and terminal outcomes over the AI SDK UI Message Stream protocol. |
-| **Conversation experience** | Local conversation history supports restoration, search, rename, pin, archive, and delete actions. |
-| **Personalization** | Users can explicitly set framework, runtime, Liara service, preferred language, experience level, answer depth, and project context. |
-| **Accessible international UI** | Dynamic RTL/LTR direction keeps Persian, Arabic, and English messages readable while preserving the same product layout. |
-| **Theme system** | Cyan, violet, blue, orange, and Liara White palettes share semantic accent tokens across the complete interface. |
-| **Operational hardening** | Runtime validation, input/token limits, timeout and abort propagation, per-instance rate limiting, request IDs, safe structured logs, security headers, and `/api/health`. |
+| **Grounded answers** | Bounded, ranked evidence from revision-pinned official Liara MDX documentation. |
+| **Traceable sources** | Backend-created citations with allowlisted official URLs and source metadata. |
+| **Streaming agent experience** | Real activity states, streamed text, citations, suggestions, and outcomes through `/api/chat`. |
+| **Conversation continuity** | Browser-local conversations can be restored, searched, renamed, pinned, archived, and continued. |
+| **Developer context** | Explicit framework, runtime, service, language, experience, depth, and project preferences. |
+| **Bilingual UX** | Message-level RTL/LTR behavior plus deterministic Persian/English technical query normalization. |
+| **Theme system** | Cyan, Violet, Blue, Orange, and White accent families powered by shared semantic tokens. |
+| **Production-minded safety** | Validated inputs, strict budgets, timeout/cancellation, rate limiting, safe errors, logs, and security headers. |
 
-## Product tour
+## Product experience
 
-### One product, five accent identities
-
-The theme system changes the complete accent identity—branding, navigation, composer, cards, states, focus rings, ambient light, and the animated search mascot—without changing the product structure.
+<p align="center">
+  <img src="docs/assets/readme/workspace-expanded.png" alt="Full Liara Copilot workspace with expanded navigation" width="100%" />
+</p>
+<p align="center"><em>Full workspace with expanded navigation and conversation access.</em></p>
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/assets/screenshots/theme-violet.png" alt="Liara Copilot violet theme" /></td>
-    <td width="50%"><img src="docs/assets/screenshots/theme-blue.png" alt="Liara Copilot blue theme" /></td>
+    <td width="50%">
+      <img src="docs/assets/readme/sources.png" alt="Official Liara sources view" />
+    </td>
+    <td width="50%">
+      <img src="docs/assets/readme/history.png" alt="Persistent conversation history" />
+    </td>
   </tr>
   <tr>
-    <td align="center"><strong>Electric Violet</strong></td>
-    <td align="center"><strong>Luminous Blue</strong></td>
-  </tr>
-  <tr>
-    <td><img src="docs/assets/screenshots/theme-orange.png" alt="Liara Copilot orange theme" /></td>
-    <td><img src="docs/assets/screenshots/theme-white.png" alt="Liara Copilot white accent theme" /></td>
-  </tr>
-  <tr>
-    <td align="center"><strong>Neon Amber</strong></td>
-    <td align="center"><strong>Liara White</strong></td>
+    <td align="center"><strong>Traceable official sources</strong></td>
+    <td align="center"><strong>Persistent conversation history</strong></td>
   </tr>
 </table>
 
-### Focused navigation and conversation history
+<p align="center">
+  <img src="docs/assets/readme/preferences.png" alt="Liara Copilot developer preferences" width="82%" />
+</p>
+<p align="center"><em>Explicit developer context and response preferences.</em></p>
+
+## Accent themes
+
+The interface uses centralized semantic theme tokens, so branding, navigation, cards, controls, workflow states, focus rings, ambient effects, and the search mascot share one consistent accent identity.
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/assets/screenshots/expanded-sidebar.png" alt="Expanded Liara Copilot sidebar" /></td>
-    <td width="50%"><img src="docs/assets/screenshots/conversation-history.png" alt="Liara Copilot conversation history" /></td>
+    <td width="33.33%"><img src="docs/assets/readme/theme-cyan.png" alt="Liara Copilot Cyan theme" /></td>
+    <td width="33.33%"><img src="docs/assets/readme/theme-orange.png" alt="Liara Copilot Orange theme" /></td>
+    <td width="33.33%"><img src="docs/assets/readme/theme-white.png" alt="Liara Copilot White theme" /></td>
   </tr>
   <tr>
-    <td align="center"><strong>Compact and expanded navigation</strong></td>
-    <td align="center"><strong>Searchable local history</strong></td>
+    <td align="center"><strong>Cyan</strong></td>
+    <td align="center"><strong>Orange</strong></td>
+    <td align="center"><strong>White</strong></td>
   </tr>
 </table>
 
-### Official sources and explicit personalization
-
-<table>
-  <tr>
-    <td width="50%"><img src="docs/assets/screenshots/sources-view.png" alt="Liara Copilot official sources view" /></td>
-    <td width="50%"><img src="docs/assets/screenshots/copilot-preferences.png" alt="Liara Copilot preferences dialog" /></td>
-  </tr>
-  <tr>
-    <td align="center"><strong>Backend-owned evidence</strong></td>
-    <td align="center"><strong>User-controlled context</strong></td>
-  </tr>
-</table>
-
-## How it works
-
-```mermaid
-flowchart LR
-    U[Developer question] --> V[Validated chat boundary]
-    V --> I[Intent and conversation routing]
-    I --> R[Official Liara retrieval]
-    R --> K[Ranked bounded context]
-    K --> A[AvalAI model adapter]
-    A --> G[Grounded streamed answer]
-    R --> C[Verified citations]
-    C --> G
-    G --> UI[Answer, sources, suggestions and outcome]
-```
-
-1. The API validates the versioned request, size limits, user context, rate limit, and request identity.
-2. Lightweight intent routing handles greetings and conversational messages without wasting a retrieval or model call; technical intent always takes priority.
-3. The retriever normalizes Persian/English technical vocabulary and ranks a bounded in-memory index built from revision-pinned official Liara MDX.
-4. The context builder removes duplicate evidence and enforces a strict character budget.
-5. AvalAI receives the user question plus isolated evidence and streams a grounded answer.
-6. The backend emits only allowlisted official citations and a typed evidence outcome.
+Violet and Blue themes are also available in the application.
 
 ## Architecture
 
-The project is a single deployable Next.js application with strict internal boundaries. This keeps hackathon operations simple while preventing UI, provider, retrieval, and security concerns from collapsing into one route.
+The project is a single deployable Next.js application with strict boundaries between presentation, contracts, orchestration, retrieval, provider integration, and operational concerns.
 
-```text
-src/
-├── app/
-│   ├── (product)/           # Product entry point
-│   └── api/                 # Thin chat and health HTTP boundaries
-├── components/              # Shared frontend primitives
-├── contracts/               # Versioned and runtime-validated shared contracts
-├── features/                # Chat, history, settings, sources and product UI
-└── server/
-    ├── agent/               # Grounding, citations and orchestration
-    ├── ai/                  # AvalAI adapter, prompts, budgets and context
-    ├── chat/                # Request lifecycle, rate limiting and logging
-    ├── monitoring/          # Safe deployment health checks
-    └── retrieval/           # Ingestion, chunking, ranking and source policy
+```mermaid
+flowchart LR
+    UI[Next.js Product UI]
+    API[POST /api/chat]
+    Agent[Grounded Agent]
+    Retrieval[Official Liara Docs Retrieval]
+    Provider[AvalAI]
+    Sources[Citations and Sources]
+
+    UI --> API
+    API --> Agent
+    Agent --> Retrieval
+    Retrieval --> Agent
+    Agent --> Provider
+    Provider --> Agent
+    Agent --> Sources
+    Agent --> API
+    API --> UI
 ```
 
-Key decisions and trade-offs are documented in [`docs/adr`](docs/adr):
+The request flow is intentionally bounded:
 
-- one full-stack Next.js deployable
-- AI SDK UI Message Stream over SSE
-- pinned raw-MDX retrieval baseline
-- AvalAI through an OpenAI-compatible provider adapter
+1. The API validates the contract version, message and body size, user context, rate limit, and request identity.
+2. Lightweight routing handles conversational messages without unnecessary retrieval or model calls; technical intent takes priority.
+3. Retrieval normalizes Persian/English developer terminology and ranks an in-memory index of official Liara MDX.
+4. The context builder deduplicates evidence and applies a strict character budget.
+5. AvalAI receives the question and isolated evidence, then streams a grounded response.
+6. The backend emits only allowlisted official sources and a typed `sufficient`, `partial`, or `none` evidence outcome.
+
+See [`docs/architecture/ARCHITECTURE.md`](docs/architecture/ARCHITECTURE.md) and the accepted [`docs/adr`](docs/adr) decisions for details.
 
 ## Technology stack
 
-- **Runtime:** Node.js 24, Next.js 16 App Router, React 19
-- **Language:** TypeScript 5 with strict type checking
-- **Styling:** Tailwind CSS 4, CSS Modules, semantic theme tokens
-- **AI:** Vercel AI SDK 7 and AvalAI's OpenAI-compatible API
-- **Validation:** Zod 4 at client/server and configuration boundaries
-- **Retrieval:** structural MDX parsing with unified/remark and an in-memory lexical ranker
-- **Motion:** Framer Motion and Paper Design mesh shaders
-- **Testing:** Vitest 4, ESLint 9, production Next.js build validation
-- **Package manager:** pnpm 10 only
+| Layer | Technology |
+| --- | --- |
+| Runtime | Node.js 24, Next.js 16 App Router, React 19 |
+| Language | TypeScript 5 in strict mode |
+| UI | Tailwind CSS 4, CSS Modules, semantic theme tokens |
+| AI | Vercel AI SDK 7 and AvalAI's OpenAI-compatible API |
+| Validation | Zod 4 at request, response, and configuration boundaries |
+| Retrieval | unified/remark structural MDX parsing and in-memory lexical ranking |
+| Motion | Framer Motion 13 and Paper Design mesh shaders |
+| Quality | Vitest 4, ESLint 9, strict typecheck, Next.js production build |
+| Package manager | pnpm 10 only |
 
-No database, Redis, vector store, authentication vendor, queue, or monitoring SaaS is required by the current architecture.
+The current architecture needs no database, Redis, vector store, authentication vendor, queue, or telemetry SaaS.
 
-## Getting started
+## Try the copilot
+
+Useful prompts for a local demo:
+
+```text
+How do I deploy a Next.js application on Liara?
+چطور متغیرهای محیطی را در لیارا تنظیم کنم؟
+Why did my Liara deployment fail?
+How should I configure a custom domain?
+```
+
+Technical questions can return grounded answers with official Liara citations. Conversational messages are handled directly without pretending that documentation evidence is required.
+
+## Quick start
 
 ### Prerequisites
 
 - Node.js `24.x`
-- pnpm `10.x` (the exact version is pinned in `package.json`)
+- Corepack or pnpm `10.x`
 - Git
-- an AvalAI API key and model ID
-- a full 40-character revision from the official [`liara-cloud/docs`](https://github.com/liara-cloud/docs) repository
+- your own AvalAI API key and compatible model ID
+- a full 40-character Git revision from [`liara-cloud/docs`](https://github.com/liara-cloud/docs)
 
-### 1. Install dependencies
-
-```bash
-corepack enable
-pnpm install --frozen-lockfile
-```
-
-Do not use npm or yarn; `pnpm-lock.yaml` is the only supported lockfile.
-
-### 2. Configure the environment
-
-```powershell
-Copy-Item .env.example .env.local
-```
-
-On macOS or Linux:
+### Install and configure
 
 ```bash
+corepack pnpm install --frozen-lockfile
 cp .env.example .env.local
 ```
 
-Set at least these server-only values:
+On Windows PowerShell, use `Copy-Item .env.example .env.local` instead of `cp`. If the PowerShell execution policy blocks `pnpm.ps1`, use `pnpm.cmd` or the `corepack pnpm` form.
+
+Edit `.env.local` and provide your own credentials and pinned documentation revision:
 
 ```dotenv
-AVALAI_API_KEY="your-avalai-api-key"
-AVALAI_MODEL="your-avalai-model-id"
+AVALAI_API_KEY="your-own-avalai-api-key"
+AVALAI_MODEL="your-compatible-model-id"
 LIARA_DOCS_REVISION="full-40-character-liara-docs-commit"
 ```
 
-`AVALAI_API_KEY` is an AvalAI provider credential—not a Liara management API key. Never expose it through a `NEXT_PUBLIC_*` variable.
+Never use a Liara management API key as `AVALAI_API_KEY`, never commit `.env.local`, and never expose provider credentials through a `NEXT_PUBLIC_*` variable.
 
-### 3. Prepare the official documentation corpus
-
-```bash
-pnpm prepare:docs
-```
-
-The command verifies or fetches the pinned official repository into the ignored project-local `.liara-docs` directory. In development, `LIARA_DOCS_REPOSITORY_PATH` may point to an existing absolute, clean checkout. Production always uses the prepared project-local corpus and never a developer-machine path.
-
-### 4. Start the application
+### Prepare the corpus and run
 
 ```bash
-pnpm dev
+corepack pnpm prepare:docs
+corepack pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Use `pnpm.cmd` or `corepack pnpm` if the PowerShell execution policy blocks the `pnpm.ps1` shim on Windows.
+Open [http://localhost:3000](http://localhost:3000). `prepare:docs` verifies or fetches the pinned official repository into the ignored `.liara-docs` directory. Developers may optionally provide an existing clean checkout through `LIARA_DOCS_REPOSITORY_PATH`.
 
-## Environment reference
+## Environment variables
 
-| Variable | Required | Secret | Default / purpose |
+| Variable | Required | Secret | Description |
 | --- | :---: | :---: | --- |
-| `AVALAI_API_KEY` | Yes | Yes | AvalAI server credential; no default |
-| `AVALAI_MODEL` | Yes | No | Model identifier; no default |
+| `AVALAI_API_KEY` | Yes | Yes | User-provided AvalAI server credential; no default |
+| `AVALAI_MODEL` | Yes | No | Compatible model identifier; no default |
 | `LIARA_DOCS_REVISION` | Yes | No | Full immutable Git revision for official documentation |
-| `AVALAI_BASE_URL` | No | No | `https://api.avalai.ir/v1` |
-| `AI_REQUEST_TIMEOUT_MS` | No | No | `45000`; accepted range 5–120 seconds |
-| `AI_MAX_OUTPUT_TOKENS` | No | No | `1200`; bounded to 128–4096 |
-| `AI_RETRIEVAL_LIMIT` | No | No | `6`; bounded to 1–10 results |
-| `CHAT_RATE_LIMIT_MAX_REQUESTS` | No | No | `20` requests per in-process window |
-| `CHAT_RATE_LIMIT_WINDOW_MS` | No | No | `60000` milliseconds |
+| `AVALAI_BASE_URL` | No | No | Provider endpoint; defaults to `https://api.avalai.ir/v1` |
+| `AI_REQUEST_TIMEOUT_MS` | No | No | Request timeout; defaults to `45000` |
+| `AI_MAX_OUTPUT_TOKENS` | No | No | Model output ceiling; defaults to `1200` |
+| `AI_RETRIEVAL_LIMIT` | No | No | Maximum retrieval results; defaults to `6` |
+| `CHAT_RATE_LIMIT_MAX_REQUESTS` | No | No | Per-instance request allowance; defaults to `20` |
+| `CHAT_RATE_LIMIT_WINDOW_MS` | No | No | Rate-limit window; defaults to `60000` ms |
 | `LIARA_DOCS_REPOSITORY_PATH` | Development only | No | Optional absolute local checkout override |
 
-All runtime configuration is parsed before use and fails with safe, non-secret errors when invalid.
+`LIARA_DOCS_REPOSITORY_PATH` should not normally be configured in production. Production uses the project-local corpus prepared during the build.
 
-## API and streaming contract
+## API surface
 
 ### `POST /api/chat`
 
-Accepts the protected v1 [`ChatRequest`](src/contracts/chat/v1/request.ts) and returns an AI SDK UI Message Stream over SSE.
-
-The stream may contain:
-
-- native text start/delta/end parts
-- transient `data-agent-state` activity events
-- persistent `data-citation` official sources
-- persistent `data-suggestions` next actions
-- persistent `data-outcome` with `completed`, `cancelled`, or `failed`
-- safe `data-error` payloads for anticipated post-header failures
-
-The frontend never manufactures citation fields. Cancellation is a terminal lifecycle outcome rather than an application error, and hidden chain-of-thought is never transmitted.
+Accepts the protected v1 [`ChatRequest`](src/contracts/chat/v1/request.ts) and returns an AI SDK UI Message Stream over SSE. The stream carries native text parts, real agent states, citations, suggestions, safe errors, and terminal outcomes. User cancellation is a lifecycle outcome rather than an application error, and hidden chain-of-thought is never transmitted.
 
 ### `GET /api/health`
 
-Returns a small non-cached health response for AI, chat, and retrieval configuration. It does not call AvalAI, ingest the corpus, or reveal configuration values.
+Validates AI, chat, and retrieval configuration without calling AvalAI, ingesting the corpus, or exposing configuration values. Responses are non-cached and suitable for a deployment health check.
 
-## Security, reliability, and cost controls
-
-- strict schemas and an 8,000-character user-message limit
-- bounded request body, retrieval count, evidence context, and model output
-- timeout and cancellation propagation through retrieval and model generation
-- stable safe error codes with no raw provider payloads or stack traces
-- per-process in-memory rate limiting behind an isolated replaceable interface
-- request IDs and concise structured lifecycle logs without full prompts or retrieved context
-- official-source URL allowlisting and backend-owned source metadata
-- retrieved documentation treated as untrusted evidence, not executable instructions
-- baseline framing, referrer, content-type, and browser-permission security headers
-- one cached corpus/index initialization per server process
-- deterministic conversational routing that avoids unnecessary model calls
-
-## Scripts
-
-| Command | Purpose |
-| --- | --- |
-| `pnpm dev` | Start the local development server |
-| `pnpm prepare:docs` | Prepare or verify the pinned official Liara corpus |
-| `pnpm lint` | Run ESLint with zero warnings allowed |
-| `pnpm typecheck` | Run strict TypeScript validation without emitting files |
-| `pnpm test` | Run the Vitest suite once |
-| `pnpm test:watch` | Run Vitest in watch mode |
-| `pnpm build` | Prepare the corpus and create a production Next.js build |
-| `pnpm start` | Start a previously built production server |
-
-Run the complete local validation gate before integration:
+## Quality gates
 
 ```bash
 pnpm lint
@@ -283,52 +229,102 @@ pnpm test
 pnpm build
 ```
 
-GitHub Actions runs the same checks on pushes and pull requests targeting `integration` or `main` with a frozen pnpm lockfile and read-only repository permissions.
+Latest verified release validation:
 
-## Deployment direction
+| Check | Result |
+| --- | --- |
+| ESLint | PASS |
+| Strict TypeScript | PASS |
+| Vitest | **165 passed, 1 skipped** |
+| Production build | PASS |
 
-The application targets Liara's Next.js platform with Node.js 24 and standard `build` / `start` scripts. The production build prepares the exact official documentation revision into `.liara-docs`; runtime processes reuse the resulting in-memory index.
+GitHub Actions runs the same gate with Node.js 24, a frozen pnpm lockfile, and read-only repository permissions on changes targeting `integration` or `main`.
 
-Before the first production release, verify these platform-specific items on Liara:
+## Deployment
 
-- pnpm lockfile and Corepack behavior
-- required server-only environment variables
-- SSE streaming and proxy buffering
-- request timeout and client-disconnect behavior
-- `/api/health` command/path configuration
-- production log visibility and multi-instance rate-limit implications
+The application is designed to run as one Next.js service on Liara.
 
-No deployment action or secret is embedded in this repository. See the [architecture deployment notes](docs/architecture/ARCHITECTURE.md#liara-deployment-direction) for the current verified direction.
+| Setting | Recommended value |
+| --- | --- |
+| Runtime | Node.js `24.x` |
+| Package manager | pnpm `10.x` |
+| Build command | `pnpm build` |
+| Start command | `pnpm start` |
+| Health endpoint | `GET /api/health` |
 
-## Known limitations
+Required deployment variables are `AVALAI_API_KEY`, `AVALAI_MODEL`, and `LIARA_DOCS_REVISION`. `AVALAI_BASE_URL` may be set explicitly when required by the provider configuration.
 
-- Retrieval is a deterministic lexical baseline; vector or hybrid search should be added only if measured evaluation demonstrates a material quality gain.
-- Conversation transcripts and preferences are browser-local. There is no account sync or server-side persistence.
-- Rate limiting is per server process. Multiple production instances require a shared limiter for consistent global enforcement.
-- The corpus/index is rebuilt once per server-process cold start and retained in memory; it is not distributed.
-- Liara production deployment and platform-level SSE behavior still require an explicitly authorized live validation.
+Production builds prepare the pinned official documentation corpus and therefore require Git and outbound HTTPS access during the build. Runtime uses the prepared project-local `.liara-docs` directory and does not depend on a developer-machine path.
+
+**Status:** production deployment has not yet been performed. Before release, validate pnpm/Corepack behavior, SSE proxy buffering, timeouts, disconnect cancellation, health checks, and production logs on Liara.
+
+## Security and reliability
+
+Implemented controls include:
+
+- server-only AvalAI credentials and validated HTTPS provider configuration
+- bounded schemas for request bodies, messages, user context, sources, and stream parts
+- strict input, retrieval, context, output, and timeout budgets
+- retrieval/model cancellation and client-disconnect propagation
+- official Liara URL allowlisting and backend-owned citation metadata
+- explicit separation of untrusted documentation evidence from system instructions
+- stable typed client errors without raw provider payloads or stack traces
+- isolated per-instance rate limiting
+- request IDs and structured lifecycle logs without full prompts or retrieved context
+- framing, referrer, content-type, and browser-permission security headers
+- disabled framework-identifying response header and least-privilege CI
+
+Production at multiple instances still requires a shared rate limiter and platform-level abuse controls. The project does not claim distributed enforcement.
+
+## Current limitations
+
+- Retrieval is an in-memory lexical baseline; hybrid or vector search should be considered only after measured quality evaluation.
+- Conversations and preferences are browser-local, with no account sync or server-side persistence.
+- Rate limiting and the cached retrieval index are process-local, not distributed.
+- The official docs corpus is prepared at build time rather than served by a persistent search service.
+- A real Liara production deployment and production SSE behavior have not yet been validated.
+
+## Repository structure
+
+```text
+src/
+├── app/          # Product routes and thin API boundaries
+├── contracts/    # Versioned frontend/backend contracts
+├── features/     # Chat, history, sources, settings, and product UI
+└── server/       # Agent, AI, retrieval, security, logging, and monitoring
+docs/             # Architecture, ADRs, judging matrix, and README assets
+scripts/          # Official documentation corpus preparation
+```
 
 ## Project documentation
 
-- [`SPEC.md`](SPEC.md) — authoritative product requirements and 300-point judging priorities
-- [`AGENTS.md`](AGENTS.md) — ownership, security, Git, and coding-agent operating rules
+- [`SPEC.md`](SPEC.md) — authoritative requirements and the 300-point judging priorities
+- [`AGENTS.md`](AGENTS.md) — contributor ownership, security, Git, and coding-agent rules
 - [`docs/architecture/ARCHITECTURE.md`](docs/architecture/ARCHITECTURE.md) — system boundaries and request flows
-- [`docs/adr`](docs/adr) — consequential architecture decisions
-- [`docs/JUDGING-MATRIX.md`](docs/JUDGING-MATRIX.md) — internal implementation and acceptance-evidence tracking
+- [`docs/adr`](docs/adr) — accepted architecture decisions
+- [`docs/JUDGING-MATRIX.md`](docs/JUDGING-MATRIX.md) — internal acceptance-evidence tracking
+
+## Development workflow
+
+```text
+focused feature branch → integration → validation → main
+```
+
+Use pnpm only, keep commits focused and conventional, and run the quality gate before integration. Detailed contributor and agent rules live in [`AGENTS.md`](AGENTS.md).
 
 ## Authoritative knowledge policy
 
-Liara-specific answers must prefer:
+Liara-specific answers prefer:
 
 1. [Published Liara documentation](https://docs.liara.ir/)
 2. [Official Liara documentation repository](https://github.com/liara-cloud/docs)
 
-If retrieved official evidence is insufficient, Liara Copilot says so and offers a useful next step. It must never fabricate a Liara command, configuration, price, service behavior, deployment instruction, or citation.
+If official evidence is insufficient, Liara Copilot says so and offers a useful next step. It must never fabricate a Liara command, configuration, price, service behavior, deployment instruction, or citation.
 
 ---
 
 <div align="center">
 
-Built for reliable Liara developer support—grounded, traceable, bilingual, and production-minded.
+Grounded. Traceable. Bilingual. Built for Liara developers.
 
 </div>
