@@ -4,6 +4,7 @@ import { Check, Copy } from "lucide-react";
 import { Fragment, ReactNode, useState } from "react";
 
 import styles from "./chat-workspace.module.css";
+import { getTextDirection } from "./text-direction";
 
 type MarkdownContentProps = {
   content: string;
@@ -131,7 +132,7 @@ export function CodeBlock({
 
 export function MarkdownContent({ content }: MarkdownContentProps) {
   return (
-    <div className={styles.markdownContent}>
+    <div className={styles.markdownContent} dir={getTextDirection(content)}>
       {splitMarkdownBlocks(content).map((block, index) => (
         block.type === "code" ? (
           <CodeBlock content={block.content} language={block.language} key={`code-${index}`} />

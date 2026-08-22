@@ -90,6 +90,8 @@ export function AiResponseCard({
   const retryResponse = onRetry ?? (() => onSuggestedPrompt(prompt));
   const isLoading = lifecycle?.phase === "loading";
   const isStreaming = lifecycle?.phase === "streaming";
+  const hasLiveAnswerText = typeof liveText === "string" && liveText.trim().length > 0;
+  const isAwaitingLiveAnswer = transportMode === "live" && presentation === undefined && isStreaming && !hasLiveAnswerText;
   const streamProgress = lifecycle?.progress ?? 1;
   const showDiagnostics = !isStreaming || streamProgress >= .24;
   const showRecommendation = !isStreaming || streamProgress >= .63;
@@ -135,7 +137,7 @@ export function AiResponseCard({
           <ResponseErrorState error={error} onRetry={retryResponse} />
         ) : cancelled ? (
           <ResponseCancelledState onRetry={retryResponse} />
-        ) : isLoading ? (
+        ) : isLoading || isAwaitingLiveAnswer ? (
           <LoadingState activeStep={lifecycle.activeStep} mode={transportMode} />
         ) : liveText !== undefined ? (
           <div className={`${styles.presentationGrid} ${isStreaming ? streamingStyles.streamingRegion : ""}`}>
