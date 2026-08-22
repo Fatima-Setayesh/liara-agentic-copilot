@@ -62,7 +62,7 @@ Production deployment has **not** yet been performed. Liara-specific runtime, st
     </td>
   </tr>
   <tr>
-    <td align="center"><strong>Traceable official sources</strong></td>
+    <td align="center"><strong>Official evidence workspace</strong></td>
     <td align="center"><strong>Persistent conversation history</strong></td>
   </tr>
 </table>
