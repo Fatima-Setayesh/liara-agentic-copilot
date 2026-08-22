@@ -103,6 +103,7 @@ describe("createLexicalRanker", () => {
     );
     expect(result.matches[0]?.matchedTerms).toEqual([
       "deploy",
+      "deployment",
       "next.js",
       "next",
       "js",
@@ -265,6 +266,72 @@ describe("createLexicalRanker", () => {
 
     expect(result.matches[0]?.chunk.chunkId).toBe(deploy.chunkId);
     expect(result.matches.some((match) => match.chunk === email)).toBe(false);
+  });
+
+  it("normalizes colloquial Persian Next.js deployment terms", () => {
+    const deploy = makeChunk("nextjs-deploy", {
+      title: "استقرار برنامه‌های NextJS",
+      sectionHeading: "استقرار برنامه",
+      content: "برای استقرار برنامه NextJS در لیارا از راهنمای رسمی استفاده کنید.",
+      frameworkOrRuntime: "nextjs",
+    });
+    const unrelated = makeChunk("email", {
+      title: "ارسال ایمیل",
+      content: "نمونه کد NextJS برای ارسال ایمیل.",
+      category: "email-server",
+    });
+    const result = createLexicalRanker([unrelated, deploy]).rank(
+      makeQuery({ text: "چطوری نکست رو رو لیارا دیپلوی کنم؟" }),
+      null,
+    );
+
+    expect(result.matches[0]?.chunk.chunkId).toBe(deploy.chunkId);
+    expect(result.matches.some((match) => match.chunk === unrelated)).toBe(
+      false,
+    );
+  });
+
+  it("retrieves deployment diagnostics for a mixed-language failure query", () => {
+    const troubleshooting = makeChunk("nextjs-troubleshooting", {
+      title: "خطاهای استقرار NextJS",
+      sectionHeading: "بررسی لاگ استقرار",
+      content:
+        "اگر build موفق است ولی deploy شکست می‌خورد، لاگ برنامه و خطای استقرار را بررسی کنید.",
+      frameworkOrRuntime: "nextjs",
+    });
+    const generic = makeChunk("generic-deploy", {
+      title: "استقرار برنامه",
+      content: "راهنمای عمومی deploy برنامه در لیارا.",
+    });
+    const result = createLexicalRanker([generic, troubleshooting]).rank(
+      makeQuery({
+        text: "پروژه Next.js من build میشه ولی deploy روی Liara fail میشه؛ از کجا شروع کنم؟",
+      }),
+      null,
+    );
+
+    expect(result.matches[0]?.chunk.chunkId).toBe(troubleshooting.chunkId);
+  });
+
+  it("prefers general application environment guidance over service examples", () => {
+    const environment = makeChunk("nextjs-environment", {
+      title: "متغیرهای محیطی برنامه NextJS",
+      sectionHeading: "تنظیم متغیرهای محیطی",
+      content: "متغیر محیطی برنامه NextJS را در تنظیمات برنامه تعریف کنید.",
+      frameworkOrRuntime: "nextjs",
+    });
+    const email = makeChunk("email-environment", {
+      title: "ارسال ایمیل در NextJS",
+      content: "متغیرهای محیطی سرویس ایمیل را در برنامه NextJS تنظیم کنید.",
+      category: "email-server",
+      service: "email-server",
+    });
+    const result = createLexicalRanker([email, environment]).rank(
+      makeQuery({ text: "برای Next.js env variables روی Liara چی کار کنم؟" }),
+      null,
+    );
+
+    expect(result.matches[0]?.chunk.chunkId).toBe(environment.chunkId);
   });
 
   it("honors finite limits and returns frozen result collections", () => {

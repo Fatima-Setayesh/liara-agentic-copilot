@@ -6,12 +6,19 @@ import { buildDocumentationCorpus } from "./corpus";
 import { createInMemoryLexicalRetriever } from "./retriever";
 import type { Retriever } from "./types";
 
+export const DEFAULT_RUNTIME_DOCUMENTATION_DIRECTORY = ".liara-docs";
+const PROJECT_LOCAL_DOCUMENTATION_ROOT = path.join(
+  process.cwd(),
+  ".liara-docs",
+);
+
 const runtimeRetrievalEnvironmentSchema = z.object({
   LIARA_DOCS_REPOSITORY_PATH: z
     .string()
     .trim()
     .min(1)
-    .refine(path.isAbsolute, "Must be an absolute path"),
+    .refine(path.isAbsolute, "Must be an absolute path")
+    .optional(),
   LIARA_DOCS_REVISION: z
     .string()
     .trim()
@@ -39,8 +46,14 @@ export function loadRuntimeRetrievalConfig(
     throw new RetrievalConfigurationError();
   }
 
+  const repositoryRoot =
+    process.env.NODE_ENV === "production"
+      ? PROJECT_LOCAL_DOCUMENTATION_ROOT
+      : (parsed.data.LIARA_DOCS_REPOSITORY_PATH ??
+        PROJECT_LOCAL_DOCUMENTATION_ROOT);
+
   return Object.freeze({
-    repositoryRoot: path.resolve(parsed.data.LIARA_DOCS_REPOSITORY_PATH),
+    repositoryRoot,
     revision: parsed.data.LIARA_DOCS_REVISION.toLowerCase(),
   });
 }

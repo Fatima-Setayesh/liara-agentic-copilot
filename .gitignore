@@ -12,6 +12,7 @@
 /out/
 /build
 /dist
+/.liara-docs/
 
 # Environment and secrets
 .env

@@ -41,17 +41,24 @@ export function buildAIContext(
 ): AIContext {
   const evidence: GroundedEvidence[] = [];
   const serialized: string[] = [];
+  const seenContent = new Set<string>();
   let characterCount = 2;
 
   for (const match of matches) {
+    const contentKey = match.chunk.content.trim();
+    if (contentKey.length === 0 || seenContent.has(contentKey)) {
+      continue;
+    }
+
     const citationIndex = evidence.length + 1;
     const value = serializeEvidence(match, citationIndex);
     const separatorLength = serialized.length === 0 ? 0 : 1;
 
     if (characterCount + separatorLength + value.length > maxCharacters) {
-      break;
+      continue;
     }
 
+    seenContent.add(contentKey);
     evidence.push(Object.freeze({ citationIndex, match }));
     serialized.push(value);
     characterCount += separatorLength + value.length;

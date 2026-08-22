@@ -10,9 +10,9 @@ import {
 
 const now = new Date("2026-08-20T12:00:00.000Z");
 const conversations: ConversationRecord[] = [
-  { id: "today", title: "Fix Next.js deployment", updatedAt: "2026-08-20T10:00:00.000Z", pinned: true, archived: false },
-  { id: "yesterday", title: "Database connection", updatedAt: "2026-08-19T10:00:00.000Z", pinned: false, archived: false },
-  { id: "older", title: "Docker build", updatedAt: "2026-08-10T10:00:00.000Z", pinned: false, archived: true },
+  { id: "today", title: "Fix Next.js deployment", updatedAt: "2026-08-20T10:00:00.000Z", pinned: true, archived: false, entries: [] },
+  { id: "yesterday", title: "Database connection", updatedAt: "2026-08-19T10:00:00.000Z", pinned: false, archived: false, entries: [] },
+  { id: "older", title: "Docker build", updatedAt: "2026-08-10T10:00:00.000Z", pinned: false, archived: true, entries: [] },
 ];
 
 describe("conversation history model", () => {
@@ -33,6 +33,11 @@ describe("conversation history model", () => {
   it("rejects malformed persisted history", () => {
     expect(parseStoredConversationHistory('{"not":"a history"}')).toBeNull();
     expect(parseStoredConversationHistory("not-json")).toBeNull();
+  });
+
+  it("migrates legacy metadata-only history to an empty transcript", () => {
+    const legacy = JSON.stringify([{ id: "legacy", title: "Legacy chat", updatedAt: now.toISOString(), pinned: false, archived: false }]);
+    expect(parseStoredConversationHistory(legacy)?.[0]?.entries).toEqual([]);
   });
 
   it("creates compact titles from submitted prompts", () => {

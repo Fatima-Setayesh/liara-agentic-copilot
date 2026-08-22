@@ -24,6 +24,8 @@ jobs:
     timeout-minutes: 15
     env:
       NEXT_TELEMETRY_DISABLED: "1"
+      # Non-secret official docs revision used by the production build preparation.
+      LIARA_DOCS_REVISION: "dbb7430b1abc5bf92ccca3538f45c54bdc632fa8"
     steps:
       - name: Check out repository
         uses: actions/checkout@v7

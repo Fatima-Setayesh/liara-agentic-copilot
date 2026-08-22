@@ -60,7 +60,18 @@ describe("AI context", () => {
   it("never exceeds the configured context budget", () => {
     const context = buildAIContext([match("a".repeat(500)), match("short")], 300);
 
-    expect(context.evidence).toHaveLength(0);
-    expect(context.formattedEvidence).toBe("[]");
+    expect(context.evidence).toHaveLength(1);
+    expect(context.evidence[0]?.match.chunk.content).toBe("short");
+    expect(context.formattedEvidence.length).toBeLessThanOrEqual(300);
+  });
+
+  it("does not send duplicated chunk content to the model", () => {
+    const context = buildAIContext([
+      match("same official evidence"),
+      match("same official evidence"),
+    ]);
+
+    expect(context.evidence).toHaveLength(1);
+    expect(JSON.parse(context.formattedEvidence)).toHaveLength(1);
   });
 });

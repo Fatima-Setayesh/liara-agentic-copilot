@@ -4,6 +4,7 @@ import { Check, Copy } from "lucide-react";
 import { Fragment, ReactNode, useState } from "react";
 
 import styles from "./chat-workspace.module.css";
+import { getTextDirection } from "./text-direction";
 
 type MarkdownContentProps = {
   content: string;
@@ -47,30 +48,43 @@ function renderInlineMarkdown(content: string): ReactNode[] {
     .filter(Boolean)
     .map((part, index) => {
       if (part.startsWith("`") && part.endsWith("`")) {
-        return <code key={`${part}-${index}`}>{part.slice(1, -1)}</code>;
+        return <code dir="ltr" key={`${part}-${index}`}>{part.slice(1, -1)}</code>;
       }
 
       if (part.startsWith("**") && part.endsWith("**")) {
-        return <strong key={`${part}-${index}`}>{part.slice(2, -2)}</strong>;
+        return <strong key={`${part}-${index}`}>{renderTechnicalText(part.slice(2, -2))}</strong>;
       }
 
-      return <Fragment key={`${part}-${index}`}>{part}</Fragment>;
+      return <Fragment key={`${part}-${index}`}>{renderTechnicalText(part)}</Fragment>;
     });
+}
+
+const TECHNICAL_TEXT_PATTERN = /(https?:\/\/[^\s<>()]+|www\.[^\s<>()]+|[a-zA-Z]:\\[^\s]+|(?:\/[\w.@~:+-]+){1,}|\b\d{1,3}(?:\.\d{1,3}){3}\b)/g;
+const TECHNICAL_SEGMENT_PATTERN = /^(?:https?:\/\/[^\s<>()]+|www\.[^\s<>()]+|[a-zA-Z]:\\[^\s]+|(?:\/[\w.@~:+-]+){1,}|\d{1,3}(?:\.\d{1,3}){3})$/;
+
+function renderTechnicalText(content: string): ReactNode[] {
+  return content.split(TECHNICAL_TEXT_PATTERN).filter(Boolean).map((part, index) => (
+    TECHNICAL_SEGMENT_PATTERN.test(part)
+      ? <bdi dir="ltr" key={`${part}-${index}`}>{part}</bdi>
+      : <Fragment key={`${part}-${index}`}>{part}</Fragment>
+  ));
 }
 
 function TextBlock({ content }: { content: string }) {
   const lines = content.split("\n");
   const elements: ReactNode[] = [];
   let listItems: string[] = [];
+  let listType: "ordered" | "unordered" = "unordered";
 
   function flushList() {
     if (listItems.length === 0) return;
+    const List = listType === "ordered" ? "ol" : "ul";
     elements.push(
-      <ul key={`list-${elements.length}`}>
+      <List dir={getTextDirection(listItems.join(" "))} key={`list-${elements.length}`}>
         {listItems.map((item, index) => (
-          <li key={`${item}-${index}`}>{renderInlineMarkdown(item)}</li>
+          <li dir={getTextDirection(item)} key={`${item}-${index}`}>{renderInlineMarkdown(item)}</li>
         ))}
-      </ul>,
+      </List>,
     );
     listItems = [];
   }
@@ -78,8 +92,14 @@ function TextBlock({ content }: { content: string }) {
   lines.forEach((line, index) => {
     const trimmed = line.trim();
 
-    if (trimmed.startsWith("- ")) {
-      listItems.push(trimmed.slice(2));
+    const unorderedItem = trimmed.match(/^[-*]\s+(.+)$/);
+    const orderedItem = trimmed.match(/^\d+[.)]\s+(.+)$/);
+    if (unorderedItem || orderedItem) {
+      const nextType = orderedItem ? "ordered" : "unordered";
+      if (listItems.length > 0 && listType !== nextType) flushList();
+      listType = nextType;
+      const item = orderedItem?.[1] ?? unorderedItem?.[1];
+      if (item) listItems.push(item);
       return;
     }
 
@@ -87,11 +107,12 @@ function TextBlock({ content }: { content: string }) {
     if (!trimmed) return;
 
     if (trimmed.startsWith("### ")) {
-      elements.push(<h4 key={`heading-${index}`}>{renderInlineMarkdown(trimmed.slice(4))}</h4>);
+      const heading = trimmed.slice(4);
+      elements.push(<h4 dir={getTextDirection(heading)} key={`heading-${index}`}>{renderInlineMarkdown(heading)}</h4>);
       return;
     }
 
-    elements.push(<p key={`paragraph-${index}`}>{renderInlineMarkdown(trimmed)}</p>);
+    elements.push(<p dir={getTextDirection(trimmed)} key={`paragraph-${index}`}>{renderInlineMarkdown(trimmed)}</p>);
   });
 
   flushList();
@@ -116,7 +137,7 @@ export function CodeBlock({
   }
 
   return (
-    <div className={styles.codeBlock}>
+    <div className={styles.codeBlock} dir="ltr">
       <div className={styles.codeHeader}>
         <span>{label ?? language}</span>
         <button type="button" onClick={copyCode} aria-label="Copy code block">
@@ -124,14 +145,14 @@ export function CodeBlock({
           <span>{copied ? "Copied" : "Copy"}</span>
         </button>
       </div>
-      <pre><code>{content}</code></pre>
+      <pre dir="ltr"><code dir="ltr">{content}</code></pre>
     </div>
   );
 }
 
 export function MarkdownContent({ content }: MarkdownContentProps) {
   return (
-    <div className={styles.markdownContent}>
+    <div className={styles.markdownContent} dir={getTextDirection(content)}>
       {splitMarkdownBlocks(content).map((block, index) => (
         block.type === "code" ? (
           <CodeBlock content={block.content} language={block.language} key={`code-${index}`} />

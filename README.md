@@ -73,9 +73,9 @@ On Windows systems where PowerShell blocks the `pnpm.ps1` shim, use `pnpm.cmd` o
 
 ## Environment
 
-`.env.example` separates browser-safe values from server-only configuration. Its values are placeholders. Local chat execution requires an AvalAI API key/model plus an absolute, clean, revision-pinned checkout of `liara-cloud/docs`.
+`.env.example` separates browser-safe values from server-only configuration. Its values are placeholders. Local chat execution requires an AvalAI API key/model and a full official docs revision. Use an existing absolute, clean checkout through `LIARA_DOCS_REPOSITORY_PATH`, or run `pnpm prepare:docs` to create the default checkout.
 
-The backend reads `AVALAI_API_KEY`, `AVALAI_BASE_URL`, `AVALAI_MODEL`, bounded AI settings, `LIARA_DOCS_REPOSITORY_PATH`, and `LIARA_DOCS_REVISION`. `AVALAI_API_KEY` is not a Liara management API key.
+The backend reads `AVALAI_API_KEY`, `AVALAI_BASE_URL`, `AVALAI_MODEL`, bounded AI settings, and `LIARA_DOCS_REVISION`. `LIARA_DOCS_REPOSITORY_PATH` is an optional absolute development override; production builds prepare the pinned official checkout in `.liara-docs`. `AVALAI_API_KEY` is not a Liara management API key.
 
 Rules:
 
@@ -89,6 +89,7 @@ Rules:
 | Command | Purpose |
 | --- | --- |
 | `pnpm dev` | Start the local Next.js development server |
+| `pnpm prepare:docs` | Verify a configured checkout or fetch the pinned official docs into `.liara-docs` |
 | `pnpm lint` | Run ESLint with zero warnings allowed |
 | `pnpm typecheck` | Run strict TypeScript checking without emitting files |
 | `pnpm test` | Run the Vitest suite once |
@@ -145,9 +146,9 @@ Liara-specific answers must prefer:
 - [Published Liara documentation](https://docs.liara.ir/)
 - [Official Liara documentation repository](https://github.com/liara-cloud/docs)
 
-The implemented retrieval baseline reads `src/pages/**/*.mdx` from an explicit local checkout at a caller-supplied full Git revision. It preserves canonical URL, revision-pinned repository URL, repository path, page/section identity, conservative category metadata, content hash, and chunk identity/order. It parses MDX structurally without compiling or executing it, and represents an empty or irrelevant query as `no_matches` rather than a backend failure.
+The implemented retrieval baseline reads `src/pages/**/*.mdx` from the official repository at a required full Git revision. Production prepares that immutable checkout once during build; each server process builds and reuses one in-memory lexical index. It preserves canonical URL, revision-pinned repository URL, repository path, page/section identity, conservative category metadata, content hash, and chunk identity/order. It parses MDX structurally without compiling or executing it, and represents an empty or irrelevant query as `no_matches` rather than a backend failure.
 
-The generated `public/llms` Markdown is not the authoritative input: audit fixtures showed dropped table cells and corrupted code. Fetch/refresh automation and a persisted production index remain deferred until the deployment shape is known. If official evidence is insufficient, the later assistant flow must say so.
+The generated `public/llms` Markdown is not the authoritative input: audit fixtures showed dropped table cells and corrupted code. Refreshing requires an intentional revision change and a new build; a persisted index remains deferred. If official evidence is insufficient, the assistant says so.
 
 ## Liara deployment
 
@@ -170,6 +171,6 @@ Relevant official sources:
 
 ## Security
 
-The backend validates bounded JSON requests and official citation hosts, keeps AvalAI credentials server-only, isolates retrieved text as untrusted evidence, applies request/output/context limits and timeouts, returns safe typed errors, and logs only request ID/error category on failure. Rate limiting, abuse prevention, richer redacted observability, and production validation remain required.
+The backend validates bounded JSON requests and official citation hosts, keeps AvalAI credentials server-only, isolates retrieved text as untrusted evidence, applies request/output/context limits, timeouts, and per-instance rate limiting, returns safe typed errors, and records concise structured logs. The application also disables the framework-identifying response header, adds baseline browser security headers, ignores secret files, and gives CI least-privilege access. Distributed abuse protection, richer redacted observability, and production validation remain required.
 
 <!-- contributor sync check -->

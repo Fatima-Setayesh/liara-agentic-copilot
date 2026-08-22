@@ -6,6 +6,7 @@ import {
   type ChatErrorResponse,
   type ChatMessageMetadata,
   type ChatRequest,
+  type RecentConversationMessage,
   type UserContext,
 } from "../../contracts";
 
@@ -52,16 +53,19 @@ export function createChatRequestBody({
   message,
   metadata,
   userContext,
+  recentContext,
 }: {
   message: string;
   metadata: ChatMessageMetadata;
   userContext?: UserContext;
+  recentContext?: RecentConversationMessage[];
 }): ChatRequest {
   return chatRequestSchema.parse({
     version: CHAT_CONTRACT_VERSION,
     conversationId: metadata.conversationId,
     clientRequestId: metadata.requestId,
     message,
+    ...(recentContext?.length ? { recentContext } : {}),
     userContext: userContext && Object.keys(userContext).length > 0 ? userContext : undefined,
   });
 }

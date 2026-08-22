@@ -26,16 +26,18 @@ describe("Liara chat client", () => {
     expect(error.message).not.toContain("provider stack");
   });
 
-  it("builds the protected v1 request instead of sending UI history", () => {
+  it("builds the protected v1 request with bounded recent context", () => {
     expect(createChatRequestBody({
       message: "How should I deploy this app?",
       metadata: { contractVersion: "1", requestId: "request-123", conversationId: "conversation-123" },
       userContext: { framework: "Next.js", answerDepth: "concise" },
+      recentContext: [{ role: "user", content: "I use Next.js." }],
     })).toEqual({
       version: "1",
       conversationId: "conversation-123",
       clientRequestId: "request-123",
       message: "How should I deploy this app?",
+      recentContext: [{ role: "user", content: "I use Next.js." }],
       userContext: { framework: "Next.js", answerDepth: "concise" },
     });
   });

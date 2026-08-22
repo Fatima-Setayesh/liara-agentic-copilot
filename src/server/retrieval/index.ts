@@ -42,6 +42,7 @@ export {
 } from "./rank";
 export { createInMemoryLexicalRetriever } from "./retriever";
 export {
+  DEFAULT_RUNTIME_DOCUMENTATION_DIRECTORY,
   RetrievalConfigurationError,
   createRuntimeRetriever,
   getRuntimeRetriever,

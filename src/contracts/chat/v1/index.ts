@@ -8,8 +8,8 @@ export {
   EVIDENCE_STATUSES,
   MAX_CHAT_MESSAGE_CHARACTERS,
 } from "./constants";
-export { chatRequestSchema, userContextSchema } from "./request";
-export type { ChatRequest, UserContext } from "./request";
+export { chatRequestSchema, recentConversationContextSchema, recentConversationMessageSchema, userContextSchema } from "./request";
+export type { ChatRequest, RecentConversationMessage, UserContext } from "./request";
 export {
   agentStateEventSchema,
   agentStateSchema,

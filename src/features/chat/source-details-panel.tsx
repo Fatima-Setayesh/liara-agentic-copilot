@@ -2,6 +2,7 @@ import { ArrowUpRight, BookOpenCheck, FileSearch2, FolderTree } from "lucide-rea
 
 import type { SourceItem } from "./source-experience-model";
 import styles from "./sources-section.module.css";
+import { getTextDirection } from "./text-direction";
 
 type SourceDetailsPanelProps = {
   source: SourceItem;
@@ -17,10 +18,10 @@ export function SourceDetailsPanel({ source }: SourceDetailsPanelProps) {
           <span aria-hidden="true"><FileSearch2 size={18} strokeWidth={1.8} /></span>
           <div>
             <small>{source.typeLabel}</small>
-            <h4>{source.title}</h4>
+            <h4 dir={getTextDirection(source.title)}>{source.title}</h4>
           </div>
         </header>
-        <p>{source.evidence.summary ?? "Project evidence supplied with this response."}</p>
+        <p dir={getTextDirection(source.evidence.summary ?? "Project evidence supplied with this response.")}>{source.evidence.summary ?? "Project evidence supplied with this response."}</p>
         <dl className={styles.contextFacts}>
           <div>
             <dt><FolderTree size={13} aria-hidden="true" /> Files analyzed</dt>
@@ -34,7 +35,7 @@ export function SourceDetailsPanel({ source }: SourceDetailsPanelProps) {
         {technologies.length > 0 && (
           <div className={styles.technologyList} aria-label="Detected technologies">
             <small>Detected technologies</small>
-            <div>{technologies.map((technology) => <span key={technology}>{technology}</span>)}</div>
+            <div dir="ltr">{technologies.map((technology) => <span key={technology}>{technology}</span>)}</div>
           </div>
         )}
       </section>
@@ -49,16 +50,16 @@ export function SourceDetailsPanel({ source }: SourceDetailsPanelProps) {
         <span aria-hidden="true"><BookOpenCheck size={18} strokeWidth={1.8} /></span>
         <div>
           <small>{source.typeLabel}</small>
-          <h4>{source.title}</h4>
+          <h4 dir={getTextDirection(source.title)}>{source.title}</h4>
         </div>
       </header>
-      <p>{citationSource.snippet ?? "This official source was attached to the response by Liara's grounded retrieval flow."}</p>
+      <p dir={getTextDirection(citationSource.snippet ?? "This official source was attached to the response by Liara's grounded retrieval flow.")}>{citationSource.snippet ?? "This official source was attached to the response by Liara's grounded retrieval flow."}</p>
       <dl className={styles.documentationFacts}>
-        {citationSource.sectionHeading && <div><dt>Relevant section</dt><dd>{citationSource.sectionHeading}</dd></div>}
-        {citationSource.documentationPath && <div><dt>Documentation path</dt><dd>{citationSource.documentationPath}</dd></div>}
-        {citationSource.serviceCategory && <div><dt>Service</dt><dd>{citationSource.serviceCategory}</dd></div>}
+        {citationSource.sectionHeading && <div><dt>Relevant section</dt><dd dir={getTextDirection(citationSource.sectionHeading)}>{citationSource.sectionHeading}</dd></div>}
+        {citationSource.documentationPath && <div><dt>Documentation path</dt><dd dir="ltr">{citationSource.documentationPath}</dd></div>}
+        {citationSource.serviceCategory && <div><dt>Service</dt><dd dir={getTextDirection(citationSource.serviceCategory)}>{citationSource.serviceCategory}</dd></div>}
       </dl>
-      <a href={citationSource.url} target="_blank" rel="noreferrer">
+      <a href={citationSource.url} target="_blank" rel="noreferrer" dir="ltr">
         View full documentation
         <ArrowUpRight size={14} aria-hidden="true" />
       </a>
