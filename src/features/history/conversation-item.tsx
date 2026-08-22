@@ -4,6 +4,7 @@ import { MessageSquareText, Pin } from "lucide-react";
 import { FormEvent, useState } from "react";
 
 import { ConversationActions } from "./conversation-actions";
+import { getTextDirection } from "@/features/chat/text-direction";
 import type { ConversationRecord } from "./conversation-history-model";
 import styles from "./conversation-history.module.css";
 
@@ -50,6 +51,7 @@ export function ConversationItem({
         <form className={styles.renameConversation} onSubmit={submitRename}>
           <input
             value={draftTitle}
+            dir={getTextDirection(draftTitle)}
             onChange={(event) => setDraftTitle(event.target.value)}
             onBlur={(event) => event.currentTarget.form?.requestSubmit()}
             onKeyDown={(event) => {
@@ -72,7 +74,7 @@ export function ConversationItem({
         >
           <span className={styles.conversationIcon} aria-hidden="true"><MessageSquareText size={14} strokeWidth={1.75} /></span>
           <span className={styles.conversationCopy}>
-            <strong>{conversation.title}</strong>
+            <strong dir={getTextDirection(conversation.title)}>{conversation.title}</strong>
             <small>{formatConversationTime(conversation.updatedAt)}</small>
           </span>
           {conversation.pinned && <Pin className={styles.pinnedIcon} size={11} aria-label="Pinned" />}

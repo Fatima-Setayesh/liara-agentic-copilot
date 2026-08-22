@@ -77,6 +77,23 @@
   --logo-filter: hue-rotate(208deg) saturate(1.45) brightness(1.12);
 }
 
+.appShell[data-accent-theme="white"] {
+  --accent-primary: #f4f4f5;
+  --accent-bright: #ffffff;
+  --accent-soft: #d4d4d8;
+  --accent-deep: #71717a;
+  --accent-secondary: #e2e8f0;
+  --accent-rgb: 244, 244, 245;
+  --accent-glow: rgba(255, 255, 255, .22);
+  --accent-border: rgba(255, 255, 255, .38);
+  --accent-muted: rgba(244, 244, 245, .11);
+  --accent-surface: rgba(244, 244, 245, .09);
+  --accent-text: #fafafa;
+  --accent-ring: rgba(255, 255, 255, .9);
+  --ambient-filter: grayscale(1) brightness(1.55);
+  --logo-filter: grayscale(1) brightness(2.35) contrast(.78);
+}
+
 .sidebarIsCollapsed { grid-template-columns: 86px minmax(0, 1fr); }
 
 .sidebar {
@@ -208,7 +225,8 @@
     inset 0 0 24px var(--accent-muted);
 }
 
-.logoHoverPill {
+.logoHoverPill,
+.controlTooltip {
   position: absolute;
   top: 50%;
   left: calc(100% + 20px);
@@ -291,8 +309,8 @@
 .sidebarCollapsed .compactBrandMark img { width: 38px; height: 38px; }
 
 .sidebarCollapsed .wordmark,
-.sidebarCollapsed .newConversation > span,
-.sidebarCollapsed .navItem > span,
+.sidebarCollapsed .newConversation > span:not(.sidebarTooltip),
+.sidebarCollapsed .navItem > span:not(.sidebarTooltip),
 .sidebarCollapsed .profileCopy,
 .sidebarCollapsed .profileButton > svg,
 .sidebarCollapsed .recentSection {
@@ -469,6 +487,7 @@
 }
 
 .profileButton {
+  position: relative;
   width: 100%;
   gap: 13px;
   padding: 7px 0;
@@ -742,6 +761,7 @@
 .paletteSwatch[data-palette="violet"] { color: #a855f7; background: linear-gradient(135deg, #d8b4fe, #7e22ce); }
 .paletteSwatch[data-palette="blue"] { color: #3b82f6; background: linear-gradient(135deg, #93c5fd, #1d4ed8); }
 .paletteSwatch[data-palette="orange"] { color: #ff8a1e; background: linear-gradient(135deg, #ffc46b, #c96a10); }
+.paletteSwatch[data-palette="white"] { color: #f4f4f5; background: linear-gradient(135deg, #fff, #71717a); }
 
 .statusDot,
 .footerStatus i {
@@ -1011,6 +1031,7 @@
   font: inherit;
   font-size: 16px;
   line-height: 1.55;
+  text-align: start;
 }
 
 .promptInner textarea::placeholder { color: #78858a; opacity: 1; }
@@ -1044,7 +1065,38 @@
   box-shadow: none;
 }
 
-.sendGroup { gap: 0; }
+.sendGroup { position: relative; gap: 0; }
+
+.sendTooltip {
+  top: auto;
+  right: 0;
+  bottom: calc(100% + 10px);
+  left: auto;
+  transform: translate3d(0, 8px, 0) scale(.97);
+  transform-origin: right bottom;
+}
+
+.sidebarTooltip {
+  top: 50%;
+  left: calc(100% + 16px);
+  min-width: 104px;
+  transform: translate3d(-8px, -50%, 0) scale(.97);
+  transform-origin: left center;
+}
+
+.sidebarCollapsed :is(.newConversation, .navItem, .profileButton):hover > .sidebarTooltip,
+.sidebarCollapsed :is(.newConversation, .navItem, .profileButton):focus-visible > .sidebarTooltip {
+  opacity: 1;
+  transform: translate3d(0, -50%, 0) scale(1);
+  visibility: visible;
+}
+
+.sendGroup:hover .sendTooltip,
+.sendGroup:focus-within .sendTooltip {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
+  visibility: visible;
+}
 .sendButton {
   display: grid;
   width: 48px;
@@ -1538,6 +1590,8 @@
   .suggestionCard,
   .glassCard,
   .sendButton,
+  .sendTooltip,
+  .sidebarTooltip,
   .brandTrigger,
   .compactBrandMark,
   .logoHoverPill,

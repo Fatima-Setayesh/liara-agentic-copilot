@@ -38,6 +38,7 @@
   outline: 0;
   background: transparent;
   font-size: 12px;
+  text-align: start;
 }
 
 .conversationSearch input::placeholder { color: #526166; }
@@ -193,7 +194,9 @@
 .conversationItem[data-active="true"] .conversationIcon { color: var(--accent-bright, #54dfcf); border-color: rgba(var(--accent-rgb, 46, 215, 241), .23); background: rgba(var(--accent-rgb, 46, 215, 241), .1); box-shadow: 0 0 13px rgba(var(--accent-rgb, 46, 215, 241), .08); }
 
 .conversationCopy { display: grid; min-width: 0; gap: 3px; }
-.conversationCopy strong { overflow: hidden; color: #adb9bb; font-size: 12px; font-weight: 540; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap; }
+.conversationCopy strong { display: block; overflow: hidden; color: #adb9bb; font-size: 12px; font-weight: 540; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap; }
+.conversationCopy strong[dir="rtl"] { text-align: right; }
+.conversationCopy strong[dir="ltr"] { text-align: left; }
 .conversationCopy small { color: #536368; font-size: 10px; }
 .conversationItem[data-active="true"] .conversationCopy strong { color: #d8e5e4; }
 .pinnedIcon { color: var(--accent-primary, #52daca); }
@@ -264,7 +267,7 @@
 .conversationMenu .deleteConversationAction[data-confirming="true"] { color: #ffd6cc; background: rgba(108, 40, 34, .38); }
 
 .renameConversation { min-height: 45px; padding: 7px; }
-.renameConversation input { width: 100%; height: 31px; padding: 0 8px; color: #d8e5e3; border: 1px solid var(--accent-border); border-radius: 7px; outline: 0; background: rgba(5, 18, 22, .9); font-size: 12px; box-shadow: 0 0 0 3px var(--accent-muted); }
+.renameConversation input { width: 100%; height: 31px; padding: 0 8px; color: #d8e5e3; border: 1px solid var(--accent-border); border-radius: 7px; outline: 0; background: rgba(5, 18, 22, .9); font-size: 12px; text-align: start; box-shadow: 0 0 0 3px var(--accent-muted); }
 
 .historyLoading { display: grid; gap: 7px; padding-top: 4px; }
 .historyLoading > span { display: grid; min-height: 48px; grid-template-columns: 26px minmax(0, 1fr); align-items: center; gap: 9px; padding: 7px; border: 1px solid var(--accent-muted); border-radius: 9px; background: rgba(4, 19, 22, .42); }

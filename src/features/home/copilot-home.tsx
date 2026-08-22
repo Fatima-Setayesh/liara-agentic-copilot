@@ -34,10 +34,11 @@ import {
   Target,
   type LucideIcon,
 } from "lucide-react";
-import { FormEvent, RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, RefObject, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { ChatWorkspace } from "@/features/chat/chat-workspace";
 import { SourcesSection } from "@/features/chat/sources-section";
+import { getTextDirection } from "@/features/chat/text-direction";
 import { useLiaraConversation } from "@/features/chat/use-liara-conversation";
 import { ConversationHistory } from "@/features/history/conversation-history";
 import { restoreChatEntries, type ConversationRecord } from "@/features/history/conversation-history-model";
@@ -81,6 +82,7 @@ const accentThemes: Array<{ value: AccentTheme; label: string }> = [
   { value: "violet", label: "Liara Violet" },
   { value: "blue", label: "Liara Blue" },
   { value: "orange", label: "Liara Orange" },
+  { value: "white", label: "Liara White" },
 ];
 
 const benefits = [
@@ -118,6 +120,10 @@ function BrandMark({ compact = false }: { compact?: boolean }) {
       )}
     </div>
   );
+}
+
+function SidebarTooltip({ id, label }: { id: string; label: string }) {
+  return <span className={`${styles.controlTooltip} ${styles.sidebarTooltip}`} id={id} role="tooltip">{label}</span>;
 }
 
 function Sidebar({
@@ -198,29 +204,35 @@ function Sidebar({
           data-active={(activeItem === "Chat" && activeConversationId === null) || undefined}
           aria-pressed={activeItem === "Chat" && activeConversationId === null}
           aria-label="New Chat"
-          title={collapsed ? "New Chat" : undefined}
+          aria-describedby={collapsed ? "sidebar-new-chat-tooltip" : undefined}
         >
           <Plus size={23} strokeWidth={1.7} aria-hidden="true" />
           <span>New Chat</span>
+          <SidebarTooltip id="sidebar-new-chat-tooltip" label="New Chat" />
         </button>
 
         <nav className={styles.navList}>
-          {navigation.map(({ label, icon: Icon }) => (
-            <button
-              key={label}
-              type="button"
-              className={`${styles.navItem} ${activeItem === label ? styles.navItemActive : ""}`}
-              onClick={() => {
-                onNavigate(label as WorkspaceView);
-              }}
-              aria-current={activeItem === label ? "page" : undefined}
-              aria-label={label}
-              title={collapsed ? label : undefined}
-            >
-              <Icon size={21} strokeWidth={1.75} />
-              <span>{label}</span>
-            </button>
-          ))}
+          {navigation.map(({ label, icon: Icon }) => {
+            const tooltipId = `sidebar-${label.toLowerCase()}-tooltip`;
+
+            return (
+              <button
+                key={label}
+                type="button"
+                className={`${styles.navItem} ${activeItem === label ? styles.navItemActive : ""}`}
+                onClick={() => {
+                  onNavigate(label as WorkspaceView);
+                }}
+                aria-current={activeItem === label ? "page" : undefined}
+                aria-label={label}
+                aria-describedby={collapsed ? tooltipId : undefined}
+              >
+                <Icon size={21} strokeWidth={1.75} />
+                <span>{label}</span>
+                <SidebarTooltip id={tooltipId} label={label} />
+              </button>
+            );
+          })}
         </nav>
 
         <div className={styles.sidebarDivider} />
@@ -241,13 +253,20 @@ function Sidebar({
         </section>
 
         <div className={styles.profileArea}>
-          <button type="button" className={styles.profileButton} onClick={onOpenSettings} aria-haspopup="dialog">
+          <button
+            type="button"
+            className={styles.profileButton}
+            onClick={onOpenSettings}
+            aria-haspopup="dialog"
+            aria-describedby={collapsed ? "sidebar-settings-tooltip" : undefined}
+          >
             <span className={styles.avatar}>L</span>
             <span className={styles.profileCopy}>
               <strong>Liara Developer</strong>
               <small>developer@liara.cloud</small>
             </span>
             <ChevronDown size={17} />
+            <SidebarTooltip id="sidebar-settings-tooltip" label="Profile & settings" />
           </button>
         </div>
       </aside>
@@ -457,6 +476,7 @@ function PromptComposer({
 }) {
   const [prompt, setPrompt] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const sendTooltipId = useId();
 
   const canSubmit = useMemo(() => prompt.trim().length > 0, [prompt]);
 
@@ -476,6 +496,7 @@ function PromptComposer({
         <div className={styles.promptInner}>
           <textarea
             value={prompt}
+            dir={getTextDirection(prompt)}
             ref={textareaRef}
             onChange={(event) => setPrompt(event.target.value)}
             onKeyDown={(event) => {
@@ -503,9 +524,15 @@ function PromptComposer({
                 disabled={!busy && !canSubmit}
                 onClick={busy ? onCancel : undefined}
                 aria-label={busy ? "Stop generation" : "Send prompt"}
+                aria-describedby={busy ? undefined : sendTooltipId}
               >
                 {busy ? <Square size={16} fill="currentColor" /> : submitted ? <Check size={21} /> : <ArrowUp size={22} />}
               </button>
+              {!busy && (
+                <span className={`${styles.controlTooltip} ${styles.sendTooltip}`} id={sendTooltipId} role="tooltip">
+                  Enter to send
+                </span>
+              )}
             </div>
           </div>
         </div>
