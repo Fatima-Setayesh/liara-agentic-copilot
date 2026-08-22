@@ -11,7 +11,7 @@ import {
 import type { ChatEntry } from "@/features/chat/chat-workspace";
 
 const HISTORY_STORAGE_KEY = "liara-copilot-conversation-history-v1";
-const ACTIVE_CONVERSATION_STORAGE_KEY = "liara-copilot-active-conversation-v1";
+const LEGACY_ACTIVE_CONVERSATION_STORAGE_KEY = "liara-copilot-active-conversation-v1";
 const HISTORY_READY_DELAY = 420;
 
 export function useConversationHistory() {
@@ -21,20 +21,21 @@ export function useConversationHistory() {
 
   useEffect(() => {
     let storedConversations: ConversationRecord[] | null = null;
-    let storedActiveConversationId: string | null = null;
 
     try {
       storedConversations = parseStoredConversationHistory(window.localStorage.getItem(HISTORY_STORAGE_KEY));
-      storedActiveConversationId = window.localStorage.getItem(ACTIVE_CONVERSATION_STORAGE_KEY);
     } catch {
       storedConversations = null;
     }
 
+    try {
+      window.localStorage.removeItem(LEGACY_ACTIVE_CONVERSATION_STORAGE_KEY);
+    } catch {
+      // History remains available for the current session when storage is unavailable.
+    }
+
     const readyTimer = window.setTimeout(() => {
       setConversations(storedConversations ?? []);
-      if (storedActiveConversationId && storedConversations?.some((conversation) => conversation.id === storedActiveConversationId)) {
-        setActiveConversationId(storedActiveConversationId);
-      }
       setIsLoading(false);
     }, HISTORY_READY_DELAY);
 
@@ -50,16 +51,6 @@ export function useConversationHistory() {
       // History remains available for the current session when storage is unavailable.
     }
   }, [conversations, isLoading]);
-
-  useEffect(() => {
-    if (isLoading) return;
-    try {
-      if (activeConversationId) window.localStorage.setItem(ACTIVE_CONVERSATION_STORAGE_KEY, activeConversationId);
-      else window.localStorage.removeItem(ACTIVE_CONVERSATION_STORAGE_KEY);
-    } catch {
-      // The active selection remains available for the current session.
-    }
-  }, [activeConversationId, isLoading]);
 
   const startNewConversation = useCallback(() => {
     setActiveConversationId(null);
