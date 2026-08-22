@@ -2,7 +2,7 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   agentStateEventSchema,
@@ -96,6 +96,36 @@ function getActiveStep(agentState?: AgentState) {
   }
 }
 
+function createLiveTransport() {
+  return new DefaultChatTransport<ChatUIMessage>({
+    api: CHAT_API_PATH,
+    fetch: liaraChatFetch,
+    prepareSendMessagesRequest: ({ messages, body }) => {
+      const latestUserMessage = [...messages].reverse().find((message) => message.role === "user");
+      const metadata = latestUserMessage?.metadata;
+      const prompt = getMessageText(latestUserMessage);
+      const requestBody = body as {
+        userContext?: UserContext;
+        recentContext?: RecentConversationMessage[];
+      } | undefined;
+      const requestedContext = requestBody?.userContext;
+      if (!metadata) throw new Error("A validated chat request requires message metadata.");
+      const request = createChatRequestBody({
+        message: prompt,
+        metadata,
+        recentContext: requestBody?.recentContext ?? [],
+        ...(requestedContext ? { userContext: requestedContext } : {}),
+      });
+
+      return {
+        body: request,
+        headers: { Accept: "text/event-stream" },
+        credentials: "same-origin",
+      };
+    },
+  });
+}
+
 export function useLiaraConversation({
   mode,
   userContext,
@@ -113,29 +143,7 @@ export function useLiaraConversation({
   const [liveEntryState, setLiveEntryState] = useState<Record<string, LiveEntryState>>({});
   const [restoredEntries, setRestoredEntries] = useState<ChatEntry[]>([]);
 
-  const transport = useMemo(() => new DefaultChatTransport<ChatUIMessage>({
-    api: CHAT_API_PATH,
-    fetch: liaraChatFetch,
-    prepareSendMessagesRequest: ({ messages, body }) => {
-      const latestUserMessage = [...messages].reverse().find((message) => message.role === "user");
-      const metadata = latestUserMessage?.metadata;
-      const prompt = getMessageText(latestUserMessage);
-      const requestedContext = (body as { userContext?: UserContext } | undefined)?.userContext;
-      if (!metadata) throw new Error("A validated chat request requires message metadata.");
-      const request = createChatRequestBody({
-        message: prompt,
-        metadata,
-        recentContext: recentContextRef.current,
-        ...(requestedContext ? { userContext: requestedContext } : {}),
-      });
-
-      return {
-        body: request,
-        headers: { Accept: "text/event-stream" },
-        credentials: "same-origin",
-      };
-    },
-  }), []);
+  const [transport] = useState(createLiveTransport);
 
   const live = useChat<ChatUIMessage>({
     transport,
@@ -261,14 +269,18 @@ export function useLiaraConversation({
       conversationId,
     };
     latestUserIdRef.current = messageId;
-    recentContextRef.current = buildRecentContext(transcriptRef.current);
+    const recentContext = buildRecentContext(transcriptRef.current);
+    recentContextRef.current = recentContext;
     setActiveLiveMessageId(messageId);
     latestRequestIdRef.current = requestId;
     setSentAtByMessage((current) => ({ ...current, [messageId]: new Date().toISOString() }));
     setLiveEntryState((current) => ({ ...current, [messageId]: {} }));
     live.clearError();
-    void live.sendMessage({ id: messageId, role: "user", parts: [{ type: "text", text: prompt }], metadata }, { body: { userContext } });
-  }, [live, mode, preview, userContext]);
+    void live.sendMessage(
+      { id: messageId, role: "user", parts: [{ type: "text", text: prompt }], metadata },
+      { body: { userContext, recentContext } },
+    );
+  }, [live, mode, preview, setActiveLiveMessageId, setLiveEntryState, userContext]);
 
   const retryEntry = useCallback((entryId: string) => {
     if (mode === "preview") {
@@ -288,7 +300,10 @@ export function useLiaraConversation({
     )));
     setLiveEntryState((current) => ({ ...current, [entryId]: {} }));
     live.clearError();
-    void live.regenerate({ messageId: entryId, body: { userContext } });
+    void live.regenerate({
+      messageId: entryId,
+      body: { userContext, recentContext: recentContextRef.current },
+    });
   }, [live, mode, preview, userContext]);
 
   const cancelGeneration = useCallback(() => {
@@ -307,7 +322,7 @@ export function useLiaraConversation({
         }));
       }
     }
-  }, [live, mode, preview]);
+  }, [live, mode, preview, setLiveEntryState]);
 
   const resetConversation = useCallback(() => {
     preview.resetConversation();
@@ -345,7 +360,11 @@ export function useLiaraConversation({
     () => [...restoredEntries, ...currentEntries],
     [currentEntries, restoredEntries],
   );
-  transcriptRef.current = chatEntries;
+
+  useEffect(() => {
+    transcriptRef.current = chatEntries;
+  }, [chatEntries]);
+
   const busy = mode === "preview"
     ? preview.busy
     : live.status === "submitted" || live.status === "streaming";

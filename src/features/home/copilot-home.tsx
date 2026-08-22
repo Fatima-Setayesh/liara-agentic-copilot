@@ -605,6 +605,10 @@ export function CopilotHome() {
     userContext: copilotPreferences.preferences.userContext,
   });
   const conversationHistory = useConversationHistory();
+  const historyActiveConversationId = conversationHistory.activeConversationId;
+  const historyConversations = conversationHistory.conversations;
+  const historyIsLoading = conversationHistory.isLoading;
+  const updateHistoryTranscript = conversationHistory.updateTranscript;
   const closeSettings = useCallback(() => setSettingsOpen(false), []);
 
   function submitPrompt(prompt: string) {
@@ -706,20 +710,19 @@ export function CopilotHome() {
     .filter((citation, index, items) => items.findIndex((item) => item.id === citation.id) === index), [chatEntries]);
 
   useEffect(() => {
-    if (conversationHistory.isLoading) return;
-    const conversationId = conversationHistory.activeConversationId;
+    if (historyIsLoading) return;
+    const conversationId = historyActiveConversationId;
     if (!conversationId || hydratedConversationRef.current === conversationId) return;
-    const conversation = conversationHistory.conversations.find((item) => item.id === conversationId);
+    const conversation = historyConversations.find((item) => item.id === conversationId);
     if (!conversation) return;
     hydratedConversationRef.current = conversationId;
     loadConversation(restoreChatEntries(conversation.entries));
-  }, [conversationHistory.activeConversationId, conversationHistory.conversations, conversationHistory.isLoading, loadConversation]);
+  }, [historyActiveConversationId, historyConversations, historyIsLoading, loadConversation]);
 
   useEffect(() => {
-    const conversationId = conversationHistory.activeConversationId;
-    if (!conversationId || conversationHistory.isLoading || busy) return;
-    conversationHistory.updateTranscript(conversationId, chatEntries);
-  }, [busy, chatEntries, conversationHistory.activeConversationId, conversationHistory.isLoading, conversationHistory.updateTranscript]);
+    if (!historyActiveConversationId || historyIsLoading || busy) return;
+    updateHistoryTranscript(historyActiveConversationId, chatEntries);
+  }, [busy, chatEntries, historyActiveConversationId, historyIsLoading, updateHistoryTranscript]);
 
   return (
     <main
