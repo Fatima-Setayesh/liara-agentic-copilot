@@ -275,10 +275,10 @@
   color: #effffd;
   font: inherit;
   font-size: 16px;
-  border: 1px solid var(--accent-muted);
+  border: 1px solid var(--accent-border);
   border-radius: 16px;
-  background: linear-gradient(145deg, rgba(9, 23, 27, .78), rgba(4, 14, 18, .8));
-  box-shadow: inset 0 1px rgba(255,255,255,.025), 0 12px 30px rgba(0, 0, 0, 0.18);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent-primary) 58%, #062226), color-mix(in srgb, var(--accent-secondary) 46%, #031619));
+  box-shadow: inset 0 1px rgba(255,255,255,.12), 0 12px 30px rgba(0, 0, 0, .18), 0 0 18px var(--accent-muted);
   cursor: pointer;
   transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }
@@ -289,9 +289,12 @@
   transform: translateY(-2px);
   color: #effffd;
   border-color: var(--accent-border);
-  background: linear-gradient(100deg, var(--accent-surface), rgba(10, 18, 22, .72));
+  background: linear-gradient(135deg, var(--accent-bright), var(--accent-primary));
+  color: #031416;
   box-shadow: 0 12px 32px var(--accent-muted), 0 0 20px var(--accent-glow), inset 0 1px rgba(255,255,255,.055);
 }
+
+.newConversation:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent-bright) 55%, transparent); outline-offset: 3px; }
 
 .sidebarCollapsed {
   padding: 24px 13px 18px;
@@ -326,6 +329,7 @@
   margin: 36px auto 0;
   gap: 0;
   padding: 0;
+  border-radius: 14px;
 }
 
 .sidebarCollapsed .navList { gap: 14px; margin-top: 14px; }
@@ -388,7 +392,9 @@
   border-radius: 2px;
   background: var(--accent-primary);
   opacity: 0;
+  transform: translateY(-5px);
   box-shadow: 0 0 10px var(--accent-primary);
+  transition: opacity 180ms ease;
 }
 
 .navItem:hover,
@@ -421,8 +427,20 @@
   box-shadow: 0 12px 28px rgba(0,0,0,.22), 0 0 24px var(--accent-muted), inset 0 1px rgba(255,255,255,.04);
 }
 
-.navItemActive::before { opacity: 1; }
+.navItemActive::before { opacity: 1; transform: translateY(0); animation: none; }
 .navItemActive svg { color: var(--accent-primary); }
+
+.navItem:not(.navItemActive):focus-visible::before {
+  opacity: 1;
+  animation: navIndicatorTravel 900ms ease-in-out infinite alternate;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .navItem:not(.navItemActive):hover::before {
+    opacity: 1;
+    animation: navIndicatorTravel 900ms ease-in-out infinite alternate;
+  }
+}
 
 .sidebarDivider {
   position: relative;
@@ -980,7 +998,7 @@
 
 .composerRegion {
   width: min(930px, 100%);
-  margin: 48px auto 0;
+  margin: 32px auto 0;
 }
 
 .promptShell {
@@ -1011,8 +1029,8 @@
 .promptInner {
   position: relative;
   z-index: 1;
-  min-height: 122px;
-  padding: 16px 18px 15px;
+  min-height: 108px;
+  padding: 12px 18px 11px;
   border-radius: 20px;
   background:
     radial-gradient(circle at 70% 110%, var(--accent-muted), transparent 39%),
@@ -1022,7 +1040,7 @@
 .promptInner textarea {
   display: block;
   width: 100%;
-  height: 54px;
+  height: 40px;
   resize: none;
   color: #e8f2f1;
   border: 0;
@@ -1099,8 +1117,8 @@
 }
 .sendButton {
   display: grid;
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   place-items: center;
   color: #091014;
   border: 0;
@@ -1117,7 +1135,7 @@
 .suggestionViewport {
   position: relative;
   width: min(805px, 100%);
-  margin: 22px auto 0;
+  margin: 18px auto 0;
   padding: 4px 0 16px;
   overflow: hidden;
   mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
@@ -1201,15 +1219,15 @@
 .rightRailToggle {
   position: absolute;
   top: 50%;
-  left: -20px;
+  left: -22px;
   z-index: 4;
   display: grid;
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   place-items: center;
   color: #8c999d;
   border: 1px solid var(--accent-border);
-  border-radius: 50%;
+  border-radius: 10px;
   background: rgba(5, 20, 23, .92);
   box-shadow: 0 12px 28px rgba(0,0,0,.3), 0 0 18px var(--accent-muted), inset 0 1px rgba(255,255,255,.03);
   backdrop-filter: blur(18px);
@@ -1308,6 +1326,9 @@
 .footerStatus span { gap: 9px; }
 .footerStatus svg { color: #92a2a7; }
 .footerStatus i { display: inline-block; width: 9px; height: 9px; }
+.footerStatus [data-health="checking"] i { background: #f0b35b; box-shadow: 0 0 14px rgba(240, 179, 91, .38); }
+.footerStatus [data-health="degraded"] { color: #d89b8a; }
+.footerStatus [data-health="degraded"] i { background: #e98367; box-shadow: 0 0 14px rgba(233, 131, 103, .42); }
 .footerDivider { display: block; width: 1px; height: 20px; background: var(--accent-muted); }
 .sidebarBackdrop { display: none; }
 
@@ -1321,6 +1342,7 @@
 @keyframes auroraDrift { from { transform: translate3d(-2%, -1%, 0) rotate(-7deg) scale(1); opacity: .7; } to { transform: translate3d(3%, 2%, 0) rotate(-3deg) scale(1.08); opacity: 1; } }
 @keyframes dotFlow { from { transform: translate3d(-1.8%, -.5%, 0); opacity: .2; } to { transform: translate3d(2.2%, .8%, 0); opacity: .34; } }
 @keyframes suggestionMarquee { to { transform: translate3d(-50%, 0, 0); } }
+@keyframes navIndicatorTravel { from { transform: translateY(-5px); opacity: .55; } to { transform: translateY(5px); opacity: 1; } }
 
 @media (min-width: 1021px) {
   .appShell {
@@ -1388,21 +1410,21 @@
   }
 
   .composerRegion {
-    margin-top: clamp(26px, 4.8vh, 48px);
+    margin-top: clamp(28px, 4vh, 34px);
   }
 
   .promptInner {
-    min-height: clamp(112px, 15vh, 122px);
-    padding-top: clamp(14px, 2vh, 16px);
-    padding-bottom: clamp(13px, 1.9vh, 15px);
+    min-height: clamp(104px, 13vh, 108px);
+    padding-top: clamp(11px, 1.5vh, 12px);
+    padding-bottom: clamp(10px, 1.4vh, 11px);
   }
 
   .promptInner textarea {
-    height: clamp(46px, 7vh, 54px);
+    height: clamp(36px, 5vh, 40px);
   }
 
   .suggestionViewport {
-    margin-top: clamp(14px, 3.3vh, 29px);
+    margin-top: clamp(16px, 2.5vh, 20px);
     padding-bottom: clamp(8px, 1.8vh, 16px);
   }
 
@@ -1493,8 +1515,9 @@
     top: 18px;
     right: auto;
     left: 18px;
-    width: 38px;
-    height: 38px;
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
     transform: none;
   }
   .rightDrawerBackdrop {
@@ -1558,9 +1581,9 @@
   .heroCopy p { margin-top: 10px; font-size: 16px; }
   .heroBenefits { margin-top: 14px; }
   .composerRegion { margin-top: 22px; }
-  .promptInner { min-height: 112px; padding-top: 14px; padding-bottom: 13px; }
-  .promptInner textarea { height: 46px; }
-  .suggestionViewport { margin-top: 14px; padding-bottom: 8px; }
+  .promptInner { min-height: 104px; padding-top: 11px; padding-bottom: 10px; }
+  .promptInner textarea { height: 36px; }
+  .suggestionViewport { margin-top: 16px; padding-bottom: 8px; }
   .suggestionCard { height: 44px; }
   .rightRail { gap: 12px; }
   .glassCard { padding-block: 18px; }
@@ -1583,6 +1606,8 @@
   .suggestionTrack {
     animation: none;
   }
+
+  .navItem::before { animation: none !important; transform: translateY(0); transition: none; }
 
   .navItem,
   .conversationItem,

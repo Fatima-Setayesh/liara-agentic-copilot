@@ -204,12 +204,12 @@ function Sidebar({
           }}
           data-active={(activeItem === "Chat" && activeConversationId === null) || undefined}
           aria-pressed={activeItem === "Chat" && activeConversationId === null}
-          aria-label="New Chat"
+          aria-label="New conversation"
           aria-describedby={collapsed ? "sidebar-new-chat-tooltip" : undefined}
         >
           <Plus size={23} strokeWidth={1.7} aria-hidden="true" />
-          <span>New Chat</span>
-          <SidebarTooltip id="sidebar-new-chat-tooltip" label="New Chat" />
+          <span>New conversation</span>
+          <SidebarTooltip id="sidebar-new-chat-tooltip" label="New conversation" />
         </button>
 
         <nav className={styles.navList}>
