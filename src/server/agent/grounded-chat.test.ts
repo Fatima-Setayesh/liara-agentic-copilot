@@ -89,6 +89,58 @@ describe("grounded chat service", () => {
     expect(retrieve).toHaveBeenCalledOnce();
   });
 
+  it("requests clarification before creating a retriever for an underspecified failure", async () => {
+    const getRetriever = vi.fn(async (): Promise<Retriever> => {
+      throw new Error("retrieval must not run before clarification");
+    });
+    const onAgentState = vi.fn();
+    const service = createGroundedChatService({
+      aiConfig,
+      aiProvider: unusedProvider,
+      getRetriever,
+    });
+
+    const result = await service.answer({
+      request: { version: "1", message: "My app does not deploy" },
+      signal: new AbortController().signal,
+      onAgentState,
+    });
+
+    expect(result).toMatchObject({
+      kind: "clarification",
+      evidenceStatus: "none",
+      citations: [],
+    });
+    expect(getRetriever).not.toHaveBeenCalled();
+    expect(onAgentState).not.toHaveBeenCalled();
+  });
+
+  it("retrieves when troubleshooting details are specific enough", async () => {
+    const retrieve = vi.fn(async () => ({
+      kind: "no_matches" as const,
+      matches: [] as const,
+      consideredChunkCount: 12,
+    }));
+    const onAgentState = vi.fn();
+    const service = createGroundedChatService({
+      aiConfig,
+      aiProvider: unusedProvider,
+      getRetriever: async () => ({ retrieve }),
+    });
+
+    await service.answer({
+      request: {
+        version: "1",
+        message: "Original question: My app failed\nFramework/runtime: Other\nError stage: Deploy\nError message/log: exit code 1",
+      },
+      signal: new AbortController().signal,
+      onAgentState,
+    });
+
+    expect(onAgentState).toHaveBeenCalledWith("retrieving");
+    expect(retrieve).toHaveBeenCalledOnce();
+  });
+
   it("returns an honest completed no-evidence answer without calling a model", async () => {
     const retriever: Retriever = {
       async retrieve() {

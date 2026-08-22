@@ -43,3 +43,40 @@ export function createCitations(
     }),
   );
 }
+
+function hasSafeCitationUrl(citation: Citation): boolean {
+  try {
+    const url = new URL(citation.source.url);
+    return url.protocol === "https:" || url.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+
+export function selectReferencedCitations(
+  answer: string,
+  citations: readonly Citation[],
+): readonly Citation[] {
+  const citationsByIndex = new Map<number, Citation>();
+  for (const citation of citations) {
+    if (
+      !citationsByIndex.has(citation.displayIndex)
+      && hasSafeCitationUrl(citation)
+    ) {
+      citationsByIndex.set(citation.displayIndex, citation);
+    }
+  }
+
+  const selected: Citation[] = [];
+  const selectedIds = new Set<string>();
+  for (const match of answer.matchAll(/\[(\d+)\]/g)) {
+    const displayIndex = Number(match[1]);
+    const citation = citationsByIndex.get(displayIndex);
+    if (citation && !selectedIds.has(citation.id)) {
+      selectedIds.add(citation.id);
+      selected.push(citation);
+    }
+  }
+
+  return Object.freeze(selected);
+}

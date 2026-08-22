@@ -26,9 +26,16 @@ export interface GroundedChatDependencies {
 export interface GroundedChatInput {
   readonly request: ChatRequest;
   readonly signal: AbortSignal;
+  readonly onAgentState?: (state: "retrieving") => void;
 }
 
 export type GroundedChatResult =
+  | {
+      readonly kind: "clarification";
+      readonly answer: string;
+      readonly citations: readonly Citation[];
+      readonly evidenceStatus: "none";
+    }
   | {
       readonly kind: "no_evidence";
       readonly answer: string;
@@ -213,6 +220,35 @@ function noEvidenceAnswer(
   return "I could not find enough reliable evidence in the official Liara documentation to answer confidently. Please specify the Liara service, framework, and the step where the issue occurs so I can search more precisely.";
 }
 
+const TROUBLESHOOTING_PATTERN = /(?:\b(?:fail(?:ed|ing|s)?|error|broken|stuck|does(?:n['’]?t| not) (?:work|build|deploy|start|run)|won['’]?t|cannot|can['’]?t)\b|خطا|مشکل|کار نمی|نمی[‌ ]?(?:شود|شه|کنه|کند)|ناموفق)/iu;
+const FRAMEWORK_OR_RUNTIME_PATTERN = /\b(?:next(?:\.js)?|nuxt(?:\.js)?|react|vue|angular|node(?:\.js)?|python|django|flask|fastapi|php|laravel|go|golang|java|spring|dotnet|\.net|docker|static)\b/iu;
+const ERROR_STAGE_PATTERN = /\b(?:build|deploy(?:ment)?|runtime)\b|ساخت|بیلد|استقرار|دیپلوی|زمان اجرا/iu;
+const DIAGNOSTIC_DETAIL_PATTERN = /(?:\b(?:exit code|status code|stack trace|traceback|exception|stderr|stdout|log)\b|\b[A-Z][A-Z0-9_]{3,}\b|\b\d{3}\b|```|لاگ|پیام خطا|کد خطا)/u;
+
+function needsTroubleshootingClarification(request: ChatRequest): boolean {
+  if (!TROUBLESHOOTING_PATTERN.test(request.message)) return false;
+
+  const frameworkKnown = Boolean(
+    request.userContext?.framework?.trim()
+      || request.userContext?.runtime?.trim()
+      || /Framework\/runtime:\s*\S+/iu.test(request.message)
+      || FRAMEWORK_OR_RUNTIME_PATTERN.test(request.message),
+  );
+  const stageKnown = ERROR_STAGE_PATTERN.test(request.message);
+  const diagnosticDetailKnown = DIAGNOSTIC_DETAIL_PATTERN.test(request.message);
+
+  return !frameworkKnown || !stageKnown || !diagnosticDetailKnown;
+}
+
+function clarificationAnswer(
+  question: string,
+  userContext: UserContext | undefined,
+): string {
+  return isPersian(question, userContext)
+    ? "برای بررسی دقیق این مشکل، لطفاً فریم‌ورک یا Runtime، مرحلهٔ خطا و متن خطا یا Log را وارد کنید."
+    : "To investigate this reliably, please provide the framework or runtime, the error stage, and the error message or log.";
+}
+
 function retrievalText(request: ChatRequest): string {
   const contextTerms = [
     request.userContext?.framework,
@@ -247,9 +283,22 @@ export function createGroundedChatService(
         });
       }
 
+      if (needsTroubleshootingClarification(input.request)) {
+        return Object.freeze({
+          kind: "clarification",
+          answer: clarificationAnswer(
+            input.request.message,
+            input.request.userContext,
+          ),
+          citations: Object.freeze([]),
+          evidenceStatus: "none",
+        });
+      }
+
       let outcome: RetrievalOutcome;
 
       try {
+        input.onAgentState?.("retrieving");
         const retriever = await waitForRetriever(
           dependencies.getRetriever(),
           input.signal,

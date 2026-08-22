@@ -164,6 +164,28 @@ describe("chat route handler", () => {
     expect(body).not.toContain('"type":"data-error"');
   });
 
+  it("streams clarification without claiming retrieval", async () => {
+    const handler = testHandler({
+      getService: () =>
+        service(async () => ({
+          kind: "clarification",
+          answer: "Please provide the framework and error stage.",
+          citations: [],
+          evidenceStatus: "none",
+        })),
+      generateId: () => "test-id",
+    });
+
+    const response = await handler(
+      request({ version: "1", message: "My app is broken" }),
+    );
+    const body = await response.text();
+
+    expect(body).toContain('"state":"clarification_required"');
+    expect(body).not.toContain('"state":"retrieving"');
+    expect(body).toContain('"evidenceStatus":"none"');
+  });
+
   it("streams model text with backend-owned citations and a partial outcome", async () => {
     const result: GroundedChatResult = {
       kind: "stream",
@@ -195,6 +217,88 @@ describe("chat route handler", () => {
     expect(body).toContain('"type":"data-citation"');
     expect(body).toContain('"evidenceStatus":"partial"');
     expect(body).not.toContain('"type":"data-error"');
+  });
+
+  it("emits only valid citations referenced by the final answer", async () => {
+    const result: GroundedChatResult = {
+      kind: "stream",
+      stream: modelTextStream("Use the documented workflow [2], then repeat [2]."),
+      citations: [
+        {
+          id: "citation_unused",
+          displayIndex: 1,
+          source: {
+            id: "unused",
+            title: "Unused source",
+            url: "https://docs.liara.ir/unused/",
+          },
+        },
+        {
+          id: "citation_used",
+          displayIndex: 2,
+          source: {
+            id: "used",
+            title: "Used source",
+            url: "https://docs.liara.ir/used/",
+          },
+        },
+        {
+          id: "citation_unsafe",
+          displayIndex: 3,
+          source: {
+            id: "unsafe",
+            title: "Unsafe source",
+            url: "javascript:alert(1)",
+          },
+        },
+      ],
+      evidenceStatus: "partial",
+    };
+    const handler = testHandler({
+      getService: () => service(async () => result),
+      generateId: () => "test-id",
+    });
+
+    const response = await handler(
+      request({ version: "1", message: "Deploy Next.js" }),
+    );
+    const body = await response.text();
+
+    expect(body).toContain("Used source");
+    expect(body).not.toContain("Unused source");
+    expect(body).not.toContain("Unsafe source");
+    expect(body.match(/citation_used/g)).toHaveLength(1);
+  });
+
+  it("does not claim evidence when the answer references no source", async () => {
+    const result: GroundedChatResult = {
+      kind: "stream",
+      stream: modelTextStream("A response without a citation marker."),
+      citations: [
+        {
+          id: "citation_unused",
+          displayIndex: 1,
+          source: {
+            id: "unused",
+            title: "Unused source",
+            url: "https://docs.liara.ir/unused/",
+          },
+        },
+      ],
+      evidenceStatus: "partial",
+    };
+    const handler = testHandler({
+      getService: () => service(async () => result),
+      generateId: () => "test-id",
+    });
+
+    const response = await handler(
+      request({ version: "1", message: "Deploy Next.js" }),
+    );
+    const body = await response.text();
+
+    expect(body).not.toContain('"type":"data-citation"');
+    expect(body).toContain('"evidenceStatus":"none"');
   });
 
   it("streams a typed retrieval error after headers are committed", async () => {
